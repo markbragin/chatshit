@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "chatshit"
-version = "0.0.1"
+version = "0.0.3"
 description = "Worst chatroom ever"
 authors = ["mark bragin <m4rk.brag1n@gmail.com>"]
 readme = "README.md"
@@ -16,3 +16,6 @@ textual-dev = "^1.2.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+chatshit = "chatshit.__main__:main"
