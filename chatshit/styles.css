@@ -1,0 +1,80 @@
+LoginScreen {
+    background: black;
+    align: center middle;
+}
+
+LoginScreen Container {
+    align: center middle;
+    background: black;
+    border: round white;
+    max-width: 40;
+    max-height: 16;
+}
+
+LoginScreen #connecting-error {
+    align: center middle;
+    background: black;
+    padding: 0 0 1 2;
+}
+
+LoginScreen Input {
+    background: black;
+    border: round white;
+}
+
+LoginScreen Input:focus {
+    background: black;
+    border: round green;
+}
+
+LoginScreen Button {
+    background: black;
+    border: round white;
+    color: white;
+    opacity: 80%;
+    margin: 0 10;
+    width: 100%;
+}
+
+LoginScreen Button:focus {
+    border: round green;
+    color: green;
+    text-style: bold;
+    text-opacity: 100%;
+}
+
+MainScreen {
+    background: black;
+    border: round white;
+}
+
+MainScreen #message-input {
+    background: black;
+    border: round white;
+}
+
+MainScreen #message-list {
+    background: black;
+    /* border: round white; */
+    padding: 0 1 0 1;
+    scrollbar-size: 0 1;
+    scrollbar-background: black;
+    scrollbar-color: grey;
+    width: 100%;
+}
+
+.message-item {
+    background: #000000;
+    /* border: round white; */
+}
+
+.message-label {
+    width: 100%;
+}
+
+#message-input {
+    height: 3;
+    width: 100%;
+}
+
+

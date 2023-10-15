@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "chatshit"
+version = "0.0.1"
+description = "Worst chatroom ever"
+authors = ["mark bragin <m4rk.brag1n@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+textual = "^0.40.0"
+
+
+[tool.poetry.group.dev.dependencies]
+textual-dev = "^1.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
