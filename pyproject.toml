@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "chatshit"
-version = "0.0.0.1"
+version = "0.0.0.2"
 description = "Worst chatroom ever"
 authors = ["mark bragin <m4rk.brag1n@gmail.com>"]
 readme = "README.md"
