@@ -1,3 +1,6 @@
+from threading import Thread
+from time import sleep
+
 from socket import gaierror
 from textual.app import ComposeResult
 from textual.containers import Container
@@ -26,9 +29,7 @@ class LoginScreen(Screen):
 
     def on_button_pressed(self) -> None:
         try:
-            self.app.client.set_address(self.ip.value, int(self.port.value))
-            self.app.client.set_nickname(self.nickname.value)
-            self.app.client.connect()
+            self.connect_to_server()
         except ValueError:
             self.info.update("Port is a number")
         except gaierror:
@@ -36,4 +37,18 @@ class LoginScreen(Screen):
         except ConnectionRefusedError:
             self.info.update("No server on this port")
         else:
-            self.dismiss()
+            if not self.app.client.connection_closed:
+                self.dismiss()
+            else:
+                self.info.update("Can't reach the server. Try again.")
+
+    def connect_to_server(self):
+        self.app.client.set_address(self.ip.value, int(self.port.value))
+        self.app.client.set_nickname(self.nickname.value)
+        conn_t = Thread(target=self.app.client.connect)
+        conn_t.daemon = True
+        conn_t.start()
+        for _ in range(10):
+            if not self.app.client.connection_closed:
+                break
+            sleep(0.5)
