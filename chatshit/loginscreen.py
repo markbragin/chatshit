@@ -7,6 +7,8 @@ from textual.containers import Container
 from textual.screen import Screen
 from textual.widgets import Button, Input, Static
 
+from .client import Client
+
 
 class LoginScreen(Screen):
     def compose(self) -> ComposeResult:
@@ -36,19 +38,16 @@ class LoginScreen(Screen):
             self.info.update("Wrong address")
         except ConnectionRefusedError:
             self.info.update("No server on this port")
+        except OverflowError:
+            self.info.update("Port must be 0-65535.")
+        except TimeoutError:
+            self.info.update("Timeout")
         else:
-            if not self.app.client.connection_closed:
-                self.dismiss()
-            else:
-                self.info.update("Can't reach the server. Try again.")
+            self.dismiss()
 
     def connect_to_server(self):
-        self.app.client.set_address(self.ip.value, int(self.port.value))
-        self.app.client.set_nickname(self.nickname.value)
-        conn_t = Thread(target=self.app.client.connect)
-        conn_t.daemon = True
-        conn_t.start()
-        for _ in range(10):
-            if not self.app.client.connection_closed:
-                break
-            sleep(0.5)
+        self.app.client = Client(
+            self.ip.value, int(self.port.value), self.nickname.value
+        )
+        self.app.client.connect()
+        self.app.set_interval(0.1, callback=self.app.update_messages)

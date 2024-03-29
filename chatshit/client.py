@@ -1,43 +1,27 @@
-import socket 
+import socket
 from threading import Thread
 from queue import Queue
 
 
-HOST = "localhost"
-PORT = 1234
 MSG_SIZE = 4096
 
 
 class Client:
-    def __init__(
-            self,
-            host: str = "localhost",
-            port: int = 1234,
-            nickname="Unknown"
-    ):
-        self.set_address(host, port)
-        self.nickname = nickname
+    def __init__(self, host: str, port: int, nickname: str):
+        self._host = host
+        self._port = port
+        self._nickname = nickname
         self.message_queue = Queue()
-        self.connection_closed = True
-
-    def set_address(self, host: str, port: int):
-        self.host = host
-        self.port = port
-
-    def set_nickname(self, nickname: str):
-        self.nickname = nickname
 
     def connect(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((self.host, self.port))
-        self.connection_closed = False
-        # try:
-        #     self.sock.connect((self.host, self.port))
-        # except socket.gaierror:
-        #     print("Wrong address")
-        # except ConnectionRefusedError:
-        #     print("Connection refused")
-        self.send(self.nickname)
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        timeout = self._sock.gettimeout()
+        self._sock.settimeout(5)
+        self._sock.connect((self._host, self._port))
+        self._sock.settimeout(timeout)
+
+        self.send(self._nickname)
         self._start_reading()
 
     def _start_reading(self):
@@ -46,8 +30,7 @@ class Client:
         recv.start()
 
     def send(self, msg: str):
-        if not self.connection_closed:
-            self.sock.send(self._pack_msg(msg))
+        self._sock.sendall(self._pack_msg(msg))
 
     def _pack_msg(self, msg: str) -> bytes:
         encoded_msg = msg.encode()
@@ -58,7 +41,7 @@ class Client:
         return self
 
     def __exit__(self):
-        self.sock.close()
+        self._sock.close()
 
     def _recv(self):
         while True:
@@ -73,29 +56,13 @@ class Client:
                 break
 
     def _read_msg(self) -> str:
-        raw_len = self.sock.recv(4)
+        raw_len = self._sock.recv(4)
         if not raw_len:
             return ""
 
         msg_len = socket.ntohl(int.from_bytes(raw_len))
-        msg = self.sock.recv(msg_len)
+        msg = self._sock.recv(msg_len)
         return msg.decode()
 
     def close(self):
-        self.sock.close()
-        self.connection_closed = True
-
-
-if __name__ == "__main__":
-    client = Client(HOST, PORT)
-    try:
-        client.connect()
-        while True:
-            msg = input()
-            if msg:
-                client.send(msg)
-    except KeyboardInterrupt:
-        client.send("")
-    except OSError:
-        pass
-
+        self._sock.close()

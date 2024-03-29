@@ -1,3 +1,5 @@
+from threading import Thread
+
 from textual.app import App
 
 from .loginscreen import LoginScreen
@@ -17,21 +19,16 @@ class ChatRoom(App):
     client: Client
 
     def on_mount(self):
-        self.client = Client()
         self.push_screen("main_screen")
         self.push_screen("login_screen")
-        self.set_interval(0.1, callback=self.update_messages)
 
     def update_messages(self):
         screen = self.get_screen("main_screen")
-        if not self.client.connection_closed:
-            while not self.client.message_queue.empty():
-                msg: str = self.client.message_queue.get()
-                screen.message_list.add_message(msg) #type: ignore
-                try:
-                    screen.message_list.action_scroll_end() #type: ignore
-                except:
-                    pass
+        while not self.client.message_queue.empty():
+            msg = self.client.message_queue.get()
+            screen.message_list.add_message(msg) #type: ignore
+        self.set_interval
+
 
 
 if __name__ == "__main__":

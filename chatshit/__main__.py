@@ -1,23 +1,21 @@
 import sys
+import socket
 
 
 def main():
     if len(sys.argv) == 1:
         run_client()
     elif len(sys.argv) == 4 and sys.argv[1] == '--server':
-        try:
-            run_server()
-        except:
-            print_usage()
-            exit(1)
+        run_server()
     else:
         print_usage()
         exit(1)
 
+
 def print_usage():
-    print("USAGE")
+    print("\nUSAGE:")
     print("chatshit")
-    print("chatshit --server address port")
+    print("chatshit --server HOST PORT")
 
 
 def run_client():
@@ -30,8 +28,18 @@ def run_client():
 
 def run_server():
     from .server import ChatServer
-    server = ChatServer(sys.argv[2], int(sys.argv[3]))
-    server.run_server()
+
+    try:
+        server = ChatServer(sys.argv[2], int(sys.argv[3]))
+    except socket.gaierror:
+        print("Wrong host or port")
+        exit(1)
+
+    try:
+        server.run_server()
+    except KeyboardInterrupt:
+        server.shutdown()
+        print("\nServer shutdown")
 
 
 if __name__ == "__main__":
