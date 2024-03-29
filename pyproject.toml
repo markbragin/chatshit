@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "chatshit"
-version = "0.0.0.2"
+version = "0.0.0.3"
 description = "Worst chatroom ever"
 authors = ["mark bragin <m4rk.brag1n@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
-textual = "^0.40.0"
+python = "^3.10"
+textual = "^0.54.0"
 
 
 [tool.poetry.group.dev.dependencies]
