@@ -47,7 +47,12 @@ class Client:
 
     def send(self, msg: str):
         if not self.connection_closed:
-            self.sock.send(msg.encode())
+            self.sock.send(self._pack_msg(msg))
+
+    def _pack_msg(self, msg: str) -> bytes:
+        encoded_msg = msg.encode()
+        msg_len = len(encoded_msg)
+        return socket.htonl(msg_len).to_bytes(4) + encoded_msg
 
     def __enter__(self):
         return self
@@ -58,14 +63,23 @@ class Client:
     def _recv(self):
         while True:
             try:
-                msg = self.sock.recv(MSG_SIZE)
+                msg = self._read_msg()
                 if not msg:
                     self.close()
                     break
-                self.message_queue.put(msg.decode())
+                self.message_queue.put(msg)
             except:
                 self.close()
                 break
+
+    def _read_msg(self) -> str:
+        raw_len = self.sock.recv(4)
+        if not raw_len:
+            return ""
+
+        msg_len = socket.ntohl(int.from_bytes(raw_len))
+        msg = self.sock.recv(msg_len)
+        return msg.decode()
 
     def close(self):
         self.sock.close()

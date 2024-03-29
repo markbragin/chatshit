@@ -50,25 +50,34 @@ class ChatServer:
 
     def _get_nickname(self, sock: socket.socket) -> str | None:
         try:
-            msg = sock.recv(MSG_SIZE)
+            msg = self._read_msg(sock)
             if not msg:
                 print(f"{sock.getpeername()} closed connection")
             else:
-                return msg.decode().strip()
+                return msg.strip()
         except:
             print(f"Error getting nickname from {sock.getpeername()}")
         return None
 
+    def _read_msg(self, sock: socket.socket) -> str:
+        raw_len = sock.recv(4)
+        if not raw_len:
+            return ""
+
+        msg_len = socket.ntohl(int.from_bytes(raw_len))
+        msg = sock.recv(msg_len)
+        return msg.decode()
+
     def _handle(self, sock: socket.socket):
         try:
-            msg = sock.recv(MSG_SIZE)
+            msg = self._read_msg(sock)
             if not msg:
                 print(f"{sock.getpeername()} closed connection")
                 msg = f"{self._get_nickname_by_sock(sock)} left the chat"
                 self.broadcast(self.serv_sock, msg)
                 self.remove(sock)
             else:
-                self.broadcast(sock, msg.decode())
+                self.broadcast(sock, msg)
         except:
             print(f"Error occured while reading {sock.getpeername()}")
             msg = f"{self._get_nickname_by_sock(sock)} left the server"
@@ -96,12 +105,17 @@ class ChatServer:
             nickname = "<Server>"
         else:
             nickname = self.nicknames[self.users.index(src_sock)]
-        msg_encoded = f"{nickname}:⠀{msg}".encode()
+        msg_encoded = self._pack_msg(f"{nickname}:⠀{msg}")
         try:
             dest_sock.send(msg_encoded)
         except:
             print(f"Error occured while reading {dest_sock.getpeername()}")
             self.remove(dest_sock)
+
+    def _pack_msg(self, msg: str) -> bytes:
+        encoded_msg = msg.encode()
+        msg_len = len(encoded_msg)
+        return socket.htonl(msg_len).to_bytes(4) + encoded_msg
 
     def broadcast(self, sender_sock: socket.socket, msg: str):
         for user in self.users:
