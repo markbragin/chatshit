@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import json
 import socket
 import selectors
@@ -8,6 +9,11 @@ import time
 
 MSG_SIZE = 4096
 SERVER_NAME = "[SERVER]"
+
+@dataclass
+class Member:
+    id: int
+    nickname: str
 
 
 class ChatServer:
@@ -24,8 +30,8 @@ class ChatServer:
             # self._listen_to_new_connections,
         )
 
-        self._user_sockets: list[socket.socket] = []
-        self._nicknames: list[str] = []
+        self._members: dict[socket.socket, Member] = {}
+        self._next_member_id = 1
 
     def __enter__(self):
         return self
@@ -39,7 +45,7 @@ class ChatServer:
     #     conn_t.start()
 
     def _get_new_connection(self, sock: socket.socket):
-        sock, addr = sock.accept()
+        sock, _ = sock.accept()
         self._selector.register(
             sock, selectors.EVENT_READ, self._handle_new_message
         )
@@ -67,7 +73,7 @@ class ChatServer:
         if not text:
             self.remove(sock)
         else:
-            nickname = self._get_nickname_by_sock(sock)
+            nickname = self._members[sock].nickname
             self.broadcast(self.pack_text_msg(f"{nickname}: {text}"))
 
     def _read_new_member_msg(self, sock: socket.socket, length: int):
@@ -79,8 +85,8 @@ class ChatServer:
 
     def _add_member(self, sock: socket.socket, nickname: str):
         nickname = self._generate_unique_nickname(nickname)
-        self._user_sockets.append(sock)
-        self._nicknames.append(nickname)
+        self._members[sock] = Member(self._next_member_id, nickname)
+        self._next_member_id += 1
 
         self.broadcast(
             self.pack_text_msg(f"{SERVER_NAME}: {nickname} joined the chat")
@@ -89,9 +95,10 @@ class ChatServer:
         print(f"{nickname}: {sock.getpeername()} connected")
 
     def _generate_unique_nickname(self, nickname: str) -> str:
-        if nickname in self._nicknames:
+        nicknames = [member.nickname for member in self._members.values()]
+        if nickname in nicknames:
             i = 1
-            while nickname + str(i) in self._nicknames:
+            while nickname + str(i) in nicknames:
                 i += 1
             nickname = nickname + str(i)
         return nickname if nickname != SERVER_NAME else "NOT a " + nickname
@@ -130,7 +137,7 @@ class ChatServer:
         return header_len + encoded_header + encoded_text
 
     def broadcast(self, msg: bytes):
-        for sock in self._user_sockets:
+        for sock in self._members:
             self.send_msg(sock, msg)
 
     def send_msg(self, sock: socket.socket, msg: bytes):
@@ -139,17 +146,13 @@ class ChatServer:
         except:
             self.remove(sock)
 
-    def _get_nickname_by_sock(self, sock: socket.socket) -> str:
-        return self._nicknames[self._user_sockets.index(sock)]
-
     def remove(self, sock: socket.socket, send_close: bool = True):
         try:
-            nickname = self._get_nickname_by_sock(sock)
+            nickname = self._members[sock].nickname
             print(f"{nickname}: {sock.getpeername()} closed connection")
 
             self._selector.unregister(sock)
-            self._nicknames.pop(self._user_sockets.index(sock))
-            self._user_sockets.remove(sock)
+            self._members.pop(sock)
             sock.close()
 
             if send_close:
@@ -171,7 +174,7 @@ class ChatServer:
     def shutdown(self):
         self.broadcast(self.pack_text_msg(f"{SERVER_NAME}: shutdown"))
         time.sleep(1)
-        for sock in self._user_sockets:
+        for sock in self._members:
             self.remove(sock, send_close=False)
         self._serversock.close()
 
