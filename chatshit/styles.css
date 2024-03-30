@@ -41,7 +41,7 @@ LoginScreen {
     }
 
     Button:focus {
-        border: $accent-color;
+        border: $default-border $accent-color;
         color: $accent-color;
         text-style: bold;
         text-opacity: 100%;
