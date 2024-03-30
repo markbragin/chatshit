@@ -1,7 +1,9 @@
+import json
 import socket
 import selectors
 import time
-from threading import Thread
+
+# from threading import Thread
 
 
 MSG_SIZE = 4096
@@ -22,7 +24,7 @@ class ChatServer:
             # self._listen_to_new_connections,
         )
 
-        self._users: list[socket.socket] = []
+        self._user_sockets: list[socket.socket] = []
         self._nicknames: list[str] = []
 
     def __enter__(self):
@@ -38,30 +40,53 @@ class ChatServer:
 
     def _get_new_connection(self, sock: socket.socket):
         sock, addr = sock.accept()
-        nickname = self._get_nickname(sock)
-        if nickname:
-            nickname = self._generate_unique_nickname(nickname)
-            self._selector.register(
-                sock, selectors.EVENT_READ, self._handle_new_message
-            )
-            self._users.append(sock)
-            self._nicknames.append(nickname)
+        self._selector.register(
+            sock, selectors.EVENT_READ, self._handle_new_message
+        )
 
-            self.broadcast(self._serversock, f"{nickname} joined the chat")
-            print(f"{nickname}: {sock.getpeername()} connected")
-        else:
-            self.remove(sock)
-
-    def _get_nickname(self, sock: socket.socket) -> str | None:
+    def _handle_new_message(self, sock: socket.socket):
         try:
-            msg = self._read_msg(sock)
-            if not msg:
-                print(f"{sock.getpeername()} closed connection")
-            else:
-                return msg.strip()
-        except:
-            print(f"Error getting nickname from {sock.getpeername()}")
-        return None
+            raw_len = sock.recv(4)
+            header_len = socket.ntohl(int.from_bytes(raw_len))
+            header = json.loads(sock.recv(header_len))
+        except json.decoder.JSONDecodeError:
+            print("Json corrupted")
+            self.remove(sock)
+            return
+        except ConnectionResetError:
+            self.remove(sock)
+            return
+
+        if header["Type"] == "text":
+            self._read_text_msg(sock, header["Length"])
+        elif header["Type"] == "new_member":
+            self._read_new_member_msg(sock, header["Length"])
+
+    def _read_text_msg(self, sock: socket.socket, length: int):
+        text = sock.recv(length).decode()
+        if not text:
+            self.remove(sock)
+        else:
+            nickname = self._get_nickname_by_sock(sock)
+            self.broadcast(self.pack_text_msg(f"{nickname}: {text}"))
+
+    def _read_new_member_msg(self, sock: socket.socket, length: int):
+        nickname = sock.recv(length).decode().strip()
+        if not nickname:
+            self.remove(sock)
+        else:
+            self._add_member(sock, nickname)
+
+    def _add_member(self, sock: socket.socket, nickname: str):
+        nickname = self._generate_unique_nickname(nickname)
+        self._user_sockets.append(sock)
+        self._nicknames.append(nickname)
+
+        self.broadcast(
+            self.pack_text_msg(f"{SERVER_NAME}: {nickname} joined the chat")
+        )
+        self.broadcast(self.pack_new_member_msg(nickname))
+        print(f"{nickname}: {sock.getpeername()} connected")
 
     def _generate_unique_nickname(self, nickname: str) -> str:
         if nickname in self._nicknames:
@@ -71,70 +96,68 @@ class ChatServer:
             nickname = nickname + str(i)
         return nickname if nickname != SERVER_NAME else "NOT a " + nickname
 
-    def _read_msg(self, sock: socket.socket) -> str:
-        raw_len = sock.recv(4)
-        if not raw_len:
-            return ""
+    def pack_text_msg(self, text: str) -> bytes:
+        encoded_text = text.encode()
+        text_len = len(encoded_text)
+        header = {
+            "Type": "text",
+            "Length": text_len,
+        }
+        encoded_header = json.dumps(header).encode()
+        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
+        return header_len + encoded_header + encoded_text
 
-        msg_len = socket.ntohl(int.from_bytes(raw_len))
-        msg = sock.recv(msg_len)
-        return msg.decode()
+    def pack_new_member_msg(self, nickname: str) -> bytes:
+        encoded_text = nickname.encode()
+        text_len = len(encoded_text)
+        header = {
+            "Type": "new_member",
+            "Length": text_len,
+        }
+        encoded_header = json.dumps(header).encode()
+        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
+        return header_len + encoded_header + encoded_text
 
-    def _handle_new_message(self, sock: socket.socket):
+    def pack_left_chat_msg(self, nickname: str) -> bytes:
+        encoded_text = nickname.encode()
+        text_len = len(encoded_text)
+        header = {
+            "Type": "left_chat",
+            "Length": text_len,
+        }
+        encoded_header = json.dumps(header).encode()
+        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
+        return header_len + encoded_header + encoded_text
+
+    def broadcast(self, msg: bytes):
+        for sock in self._user_sockets:
+            self.send_msg(sock, msg)
+
+    def send_msg(self, sock: socket.socket, msg: bytes):
         try:
-            msg = self._read_msg(sock)
-            if not msg:
-                print(f"{sock.getpeername()} closed connection")
-                msg = f"{self._get_nickname_by_sock(sock)} left the chat"
-                self.broadcast(self._serversock, msg)
-                self.remove(sock)
-            else:
-                self.broadcast(sock, msg)
+            sock.sendall(msg)
         except:
-            print(f"Error occured while reading {sock.getpeername()}")
-            msg = f"{self._get_nickname_by_sock(sock)} left the server"
-            self.broadcast(self._serversock, msg)
             self.remove(sock)
 
-    def _get_nickname_by_sock(self, sock: socket.socket) -> str | None:
-        try:
-            nick = self._nicknames[self._users.index(sock)]
-        except:
-            nick = None
-        return nick
+    def _get_nickname_by_sock(self, sock: socket.socket) -> str:
+        return self._nicknames[self._user_sockets.index(sock)]
 
-    def remove(self, sock: socket.socket):
+    def remove(self, sock: socket.socket, send_close: bool = True):
         try:
+            nickname = self._get_nickname_by_sock(sock)
+            print(f"{nickname}: {sock.getpeername()} closed connection")
+
             self._selector.unregister(sock)
-            self._nicknames.pop(self._users.index(sock))
-            self._users.remove(sock)
+            self._nicknames.pop(self._user_sockets.index(sock))
+            self._user_sockets.remove(sock)
             sock.close()
+
+            if send_close:
+                text = f"{SERVER_NAME}: {nickname} left the chat"
+                self.broadcast(self.pack_text_msg(text))
+                self.broadcast(self.pack_left_chat_msg(nickname))
         except (KeyError, ValueError):
-            return
-
-    def send(
-        self, src_sock: socket.socket, dest_sock: socket.socket, msg: str
-    ):
-        if src_sock is self._serversock:
-            nickname = SERVER_NAME
-        else:
-            nickname = self._nicknames[self._users.index(src_sock)]
-
-        msg_encoded = self._pack_msg(f"{nickname}:⠀{msg}")
-        try:
-            dest_sock.sendall(msg_encoded)
-        except:
-            print(f"Error occured while sending to {dest_sock.getpeername()}")
-            self.remove(dest_sock)
-
-    def _pack_msg(self, msg: str) -> bytes:
-        encoded_msg = msg.encode()
-        msg_len = len(encoded_msg)
-        return socket.htonl(msg_len).to_bytes(4) + encoded_msg
-
-    def broadcast(self, sender_sock: socket.socket, msg: str):
-        for user in self._users:
-            self.send(sender_sock, user, msg)
+            print("Error while removing")
 
     def run_server(self):
         self._serversock.listen()
@@ -146,10 +169,10 @@ class ChatServer:
                 callback(key.fileobj)
 
     def shutdown(self):
-        self.broadcast(self._serversock, "Server shutdown")
+        self.broadcast(self.pack_text_msg(f"{SERVER_NAME}: shutdown"))
         time.sleep(1)
-        for sock in self._users:
-            self.remove(sock)
+        for sock in self._user_sockets:
+            self.remove(sock, send_close=False)
         self._serversock.close()
 
 

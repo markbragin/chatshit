@@ -18,9 +18,9 @@ class MainScreen(Screen):
         self.input.focus()
 
     def on_input_submitted(self, event: events.InputEvent):
-        msg = self.input.value.strip()
-        if msg:
-            self.app.client.send(msg)
+        text = self.input.value.strip()
+        if text:
+            self.app.client.send_msg(self.app.client.pack_text_msg(text))
             self.input.clear()
             if self.message_list.allow_vertical_scroll:
                 self.message_list.scroll_end()

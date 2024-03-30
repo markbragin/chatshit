@@ -1,3 +1,4 @@
+import json
 import socket
 from threading import Thread
 from queue import Queue
@@ -11,7 +12,7 @@ class Client:
         self._host = host
         self._port = port
         self._nickname = nickname
-        self.message_queue = Queue()
+        self.text_message_queue = Queue()
 
     def connect(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -21,48 +22,69 @@ class Client:
         self._sock.connect((self._host, self._port))
         self._sock.settimeout(timeout)
 
-        self.send(self._nickname)
+        self.send_msg(self.pack_new_member_msg(self._nickname))
         self._start_reading()
 
     def _start_reading(self):
-        recv = Thread(target=self._recv)
+        recv = Thread(target=self._process_msg)
         recv.daemon = True
         recv.start()
 
-    def send(self, msg: str):
-        self._sock.sendall(self._pack_msg(msg))
+    def _process_msg(self) -> None:
+        while True:
+            raw_len = self._sock.recv(4)
+            header_len = socket.ntohl(int.from_bytes(raw_len))
+            header = json.loads(self._sock.recv(header_len).decode())
+            if header["Type"] == "text":
+                self._read_text_msg(header["Length"])
+            elif header["Type"] == "new_member":
+                self._read_new_member_msg(header["Length"])
+            elif header["Type"] == "left_chat":
+                self._read_left_chat_msg(header["Length"])
 
-    def _pack_msg(self, msg: str) -> bytes:
-        encoded_msg = msg.encode()
-        msg_len = len(encoded_msg)
-        return socket.htonl(msg_len).to_bytes(4) + encoded_msg
+    def _read_text_msg(self, length: int) -> None:
+        text = self._sock.recv(length).decode()
+        self.text_message_queue.put(text)
+
+    def _read_new_member_msg(self, length: int):
+        nickname = self._sock.recv(length).decode().strip()
+
+    def _read_left_chat_msg(self, length: int):
+        nickname = self._sock.recv(length).decode().strip()
+
+    def send_msg(self, msg: bytes):
+        try:
+            self._sock.sendall(msg)
+        except BrokenPipeError:
+            self.close()
+
+    def pack_text_msg(self, text: str) -> bytes:
+        encoded_text = text.encode()
+        text_len = len(encoded_text)
+        header = {
+            "Type": "text",
+            "Length": text_len,
+        }
+        encoded_header = json.dumps(header).encode()
+        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
+        return header_len + encoded_header + encoded_text
+
+    def pack_new_member_msg(self, nickname: str) -> bytes:
+        encoded_text = nickname.encode()
+        text_len = len(encoded_text)
+        header = {
+            "Type": "new_member",
+            "Length": text_len,
+        }
+        encoded_header = json.dumps(header).encode()
+        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
+        return header_len + encoded_header + encoded_text
 
     def __enter__(self):
         return self
 
     def __exit__(self):
         self._sock.close()
-
-    def _recv(self):
-        while True:
-            try:
-                msg = self._read_msg()
-                if not msg:
-                    self.close()
-                    break
-                self.message_queue.put(msg)
-            except:
-                self.close()
-                break
-
-    def _read_msg(self) -> str:
-        raw_len = self._sock.recv(4)
-        if not raw_len:
-            return ""
-
-        msg_len = socket.ntohl(int.from_bytes(raw_len))
-        msg = self._sock.recv(msg_len)
-        return msg.decode()
 
     def close(self):
         self._sock.close()

@@ -24,10 +24,9 @@ class ChatRoom(App):
 
     def update_messages(self):
         screen = self.get_screen("main_screen")
-        while not self.client.message_queue.empty():
-            msg = self.client.message_queue.get()
-            screen.message_list.add_message(msg) #type: ignore
-        self.set_interval
+        while not self.client.text_message_queue.empty():
+            text = self.client.text_message_queue.get()
+            screen.message_list.add_message(text) #type: ignore
 
 
 
