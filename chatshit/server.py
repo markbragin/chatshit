@@ -78,6 +78,9 @@ class ChatServer:
         self._add_member(sock, msg["Nickname"])
 
     def _add_member(self, sock: socket.socket, nickname: str):
+        for member in self._members.values():
+            self.send_msg(sock, self.pack_new_member_msg(member))
+
         nickname = self._generate_unique_nickname(nickname)
         self._members[sock] = Member(self._next_member_id, nickname)
         self._next_member_id += 1

@@ -22,12 +22,16 @@ class ChatRoom(App):
         self.push_screen("main_screen")
         self.push_screen("login_screen")
 
-    def update_messages(self):
+    def process_messages(self):
         screen = self.get_screen("main_screen")
-        while not self.client.text_message_queue.empty():
-            text = self.client.text_message_queue.get()
-            screen.message_list.add_message(text) #type: ignore
-
+        while not self.client.message_queue.empty():
+            msg = self.client.message_queue.get()
+            if msg["Type"] == "text":
+                screen.message_list.add_message(msg["Text"]) #type: ignore
+            elif msg["Type"] == "new_member":
+                screen.member_list.add_member(msg) #type: ignore
+            elif msg["Type"] == "left_chat":
+                screen.member_list.remove_member(msg) #type: ignore
 
 
 if __name__ == "__main__":

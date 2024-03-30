@@ -12,7 +12,7 @@ class Client:
         self._host = host
         self._port = port
         self._nickname = nickname
-        self.text_message_queue = Queue()
+        self.message_queue = Queue()
 
     def connect(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -34,21 +34,7 @@ class Client:
         while True:
             msg_len = socket.ntohl(int.from_bytes(self._sock.recv(4)))
             msg = json.loads(self._sock.recv(msg_len).decode())
-            if msg["Type"] == "text":
-                self._read_text_msg(msg)
-            elif msg["Type"] == "new_member":
-                self._read_new_member_msg(msg)
-            elif msg["Type"] == "left_chat":
-                self._read_left_chat_msg(msg)
-
-    def _read_text_msg(self, msg: dict) -> None:
-        self.text_message_queue.put(msg["Text"])
-
-    def _read_new_member_msg(self, msg: dict):
-        pass
-
-    def _read_left_chat_msg(self, msg: dict):
-        pass
+            self.message_queue.put(msg)
 
     def send_msg(self, msg: bytes):
         try:

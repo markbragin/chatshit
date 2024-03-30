@@ -46,35 +46,57 @@ LoginScreen Button:focus {
 MainScreen {
     background: black;
     border: round white;
+
+    #member-list {
+        background: black;
+        padding: 0 1 0 1;
+        scrollbar-size: 0 1;
+        scrollbar-background: black;
+        scrollbar-color: grey;
+        border: round white;
+        width: 1fr;
+        min-width: 20;
+    }
+
+    /* .member-item { */
+    /*     background: #000000; */
+    /*     /1* border: round white; *1/ */
+    /* } */
+
+    /* .member-label { */
+    /*     width: 100%; */
+    /* } */
+
+    #vertical-layout {
+        width: 5fr;
+    }
+
+    #message-list {
+        background: black;
+        border: round white;
+        padding: 0 1 0 1;
+        scrollbar-size: 0 1;
+        scrollbar-background: black;
+        scrollbar-color: grey;
+        width: 100%;
+    }
+
+    /* .message-item { */
+    /*     background: #000000; */
+    /* } */
+
+    /* .message-label { */
+    /*     width: 100%; */
+    /* } */
+
+    #message-input {
+        background: black;
+        border: round white;
+    }
+
+    #message-input {
+        height: 3;
+        width: 100%;
+    }
+
 }
-
-MainScreen #message-input {
-    background: black;
-    border: round white;
-}
-
-MainScreen #message-list {
-    background: black;
-    /* border: round white; */
-    padding: 0 1 0 1;
-    scrollbar-size: 0 1;
-    scrollbar-background: black;
-    scrollbar-color: grey;
-    width: 100%;
-}
-
-.message-item {
-    background: #000000;
-    /* border: round white; */
-}
-
-.message-label {
-    width: 100%;
-}
-
-#message-input {
-    height: 3;
-    width: 100%;
-}
-
-

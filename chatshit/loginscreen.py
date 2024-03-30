@@ -50,4 +50,4 @@ class LoginScreen(Screen):
             self.ip.value, int(self.port.value), self.nickname.value
         )
         self.app.client.connect()
-        self.app.set_interval(0.1, callback=self.app.update_messages)
+        self.app.set_interval(0.1, callback=self.app.process_messages)
