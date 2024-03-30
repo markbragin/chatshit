@@ -10,7 +10,7 @@ class MessageList(ListView):
         Binding("[", "scroll_home", "Scroll home", show=False),
         Binding("]", "scroll_end", "Scroll end", show=False),
     ]
-    hl_color = 'light_coral'
+    hl_color = "light_coral"
 
     def add_message(self, msg: str):
         bottom = self.max_scroll_y == int(self.scroll_y)
@@ -19,12 +19,7 @@ class MessageList(ListView):
         if tag in msg.split():
             msg = self._highlight_tag(msg, tag)
 
-        self.append(
-            ListItem(
-                Label(f"{msg}", classes="message-label"),
-                classes="message-item",
-            )
-        )
+        self.append(ListItem(Label(f"{msg}")))
         if bottom:
             try:
                 self.scroll_end(animate=False)

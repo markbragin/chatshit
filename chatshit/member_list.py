@@ -13,13 +13,7 @@ class MemberList(ListView):
     ]
 
     def add_member(self, msg: dict):
-        self.append(
-            ListItem(
-                Label(msg["Nickname"], classes="member-label"),
-                id=f"_{str(msg['Id'])}",
-                classes="member-item",
-            )
-        )
+        self.append(ListItem(Label(msg["Nickname"]), id=f"_{str(msg['Id'])}"))
 
     def remove_member(self, msg: dict):
         self.remove_children(f"#_{str(msg['Id'])}")
@@ -32,4 +26,3 @@ class MemberList(ListView):
             main_screen.input.value = f"{val}@{nickname}"
             main_screen.input.focus()
             event.stop()
-
