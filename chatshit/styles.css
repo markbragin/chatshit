@@ -1,7 +1,8 @@
 $background-color: black
-$accent-color: #FFAAFF
 $default-color: white
+$accent-color: salmon
 $default-border: round
+$hl-color: salmon
 
 LoginScreen {
     background: $background-color;
@@ -70,7 +71,8 @@ MainScreen {
     }
 
     ListView:focus ListItem.--highlight {
-        background: $accent-color;
+        /* background: $accent-color; */
+        color: $hl-color;
     }
 
     #member-list {
@@ -90,5 +92,38 @@ MainScreen {
 
     #message-input:focus {
         border: $default-border $accent-color;
+    }
+}
+
+DeleteMessageScreen {
+    align: center middle;
+
+    #dialog {
+        grid-size: 3 2;
+        grid-gutter: 1 1;
+        padding: 0 1;
+        width: 60;
+        height: 8;
+        background: $background;
+        border: $default-border $default-color;
+    }
+
+    #question {
+        column-span: 3;
+        width: 1fr;
+        content-align: center middle;
+    }
+
+    Button {
+        background: $background;
+        border: $default-border $default-color;
+        color: $default-color;
+        width: 100%;
+    }
+
+    Button:focus {
+        border: $default-border $accent-color;
+        color: $accent-color;
+        text-style: bold;
     }
 }

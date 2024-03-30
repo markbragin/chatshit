@@ -1,5 +1,5 @@
 from textual.app import ComposeResult, events
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Input
 

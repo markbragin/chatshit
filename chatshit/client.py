@@ -60,6 +60,15 @@ class Client:
         msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
         return msg_len + encoded_msg
 
+    def pack_delete_message(self, msg_id: int) -> bytes:
+        msg = {
+            "Type": "delete_message",
+            "Id": msg_id,
+        }
+        encoded_msg = json.dumps(msg).encode()
+        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
+        return msg_len + encoded_msg
+
     def __enter__(self):
         return self
 

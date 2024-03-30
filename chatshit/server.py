@@ -31,6 +31,8 @@ class ChatServer:
             # self._listen_to_new_connections,
         )
 
+        self._next_message_id = 1
+
         self._members: dict[socket.socket, Member] = {}
 
     def __enter__(self):
@@ -69,6 +71,8 @@ class ChatServer:
             self._read_text_msg(sock, msg)
         elif msg["Type"] == "new_member":
             self._read_new_member_msg(sock, msg)
+        elif msg["Type"] == "delete_message":
+            self._read_delete_message_msg(msg)
 
     def _read_text_msg(self, sock: socket.socket, msg: dict):
         username = self._members[sock].username
@@ -76,6 +80,9 @@ class ChatServer:
 
     def _read_new_member_msg(self, sock: socket.socket, msg: dict):
         self._add_member(sock, msg["Username"])
+
+    def _read_delete_message_msg(self, msg: dict):
+        self.broadcast(self.pack_delete_message(msg['Id']))
 
     def _add_member(self, sock: socket.socket, username: str):
         for member in self._members.values():
@@ -106,8 +113,10 @@ class ChatServer:
     def pack_text_msg(self, text: str) -> bytes:
         msg = {
             "Type": "text",
+            "Id": self._next_message_id,
             "Text": text,
         }
+        self._next_message_id += 1
         encoded_msg = json.dumps(msg).encode()
         msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
         return msg_len + encoded_msg
@@ -134,6 +143,15 @@ class ChatServer:
         msg = {
             "Type": "unique_username",
             "Username": username,
+        }
+        encoded_msg = json.dumps(msg).encode()
+        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
+        return msg_len + encoded_msg
+
+    def pack_delete_message(self, msg_id: int) -> bytes:
+        msg = {
+            "Type": "delete_message",
+            "Id": msg_id,
         }
         encoded_msg = json.dumps(msg).encode()
         msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)

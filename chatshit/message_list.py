@@ -1,5 +1,8 @@
 from textual.binding import Binding, BindingType
 from textual.widgets import ListView, ListItem, Label
+from textual import events
+
+from chatshit.delete_message_screen import DeleteMessageScreen
 
 
 class MessageList(ListView):
@@ -12,14 +15,15 @@ class MessageList(ListView):
     ]
     hl_color = "light_coral"
 
-    def add_message(self, msg: str):
+    def add_message(self, msg: dict):
         bottom = self.max_scroll_y == int(self.scroll_y)
 
+        text = msg["Text"]
         tag = f"@{self.app.client.username}"
-        if tag in msg.split():
-            msg = self._highlight_tag(msg, tag)
+        if tag in text.split():
+            text = self._highlight_tag(msg["Text"], tag)
 
-        self.append(ListItem(Label(f"{msg}")))
+        self.append(ListItem(Label(f"{text}"), id=f"_{msg['Id']}"))
         if bottom:
             try:
                 self.scroll_end(animate=False)
@@ -35,3 +39,17 @@ class MessageList(ListView):
             + f"[/{self.hl_color}]"
             + msg[pos + len(tag) :]
         )
+
+    def delete_message(self, msg_id: int):
+        self.remove_children(f"#_{msg_id}")
+        self.action_cursor_down()
+        self.action_cursor_up()
+
+    def on_key(self, event: events.Key):
+        main_screen = self.app.get_screen("main_screen")
+        if event.key == "d":
+            hl_chlid = self.highlighted_child
+            if hl_chlid:
+                msg_id = int(hl_chlid.id[1:])
+                self.app.push_screen(DeleteMessageScreen(msg_id))
+                event.stop()
