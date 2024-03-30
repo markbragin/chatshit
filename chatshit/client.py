@@ -8,15 +8,11 @@ MSG_SIZE = 4096
 
 
 class Client:
-    def __init__(self, host: str, port: int, nickname: str):
+    def __init__(self, host: str, port: int, username: str):
         self._host = host
         self._port = port
-        self._nickname = nickname
+        self.username = username
         self.message_queue = Queue()
-
-    @property
-    def nickname(self) -> str:
-        return self._nickname
 
     def connect(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,7 +22,7 @@ class Client:
         self._sock.connect((self._host, self._port))
         self._sock.settimeout(timeout)
 
-        self.send_msg(self.pack_new_member_msg(self._nickname))
+        self.send_msg(self.pack_new_member_msg(self.username))
         self._start_reading()
 
     def _start_reading(self):
@@ -55,10 +51,10 @@ class Client:
         msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
         return msg_len + encoded_msg
 
-    def pack_new_member_msg(self, nickname: str) -> bytes:
+    def pack_new_member_msg(self, username: str) -> bytes:
         msg = {
             "Type": "new_member",
-            "Nickname": nickname,
+            "Username": username,
         }
         encoded_msg = json.dumps(msg).encode()
         msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)

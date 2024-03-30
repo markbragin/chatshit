@@ -30,6 +30,8 @@ class ChatRoom(App):
                 screen.member_list.add_member(msg)
             elif msg["Type"] == "left_chat":
                 screen.member_list.remove_member(msg)
+            elif msg["Type"] == "unique_username":
+                self.client.username = msg["Username"]
 
 
 if __name__ == "__main__":

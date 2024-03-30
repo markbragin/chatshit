@@ -13,8 +13,7 @@ SERVER_NAME = "[SERVER]"
 
 @dataclass
 class Member:
-    id: int
-    nickname: str
+    username: str
     peername: None
 
 
@@ -33,7 +32,6 @@ class ChatServer:
         )
 
         self._members: dict[socket.socket, Member] = {}
-        self._next_member_id = 1
 
     def __enter__(self):
         return self
@@ -73,38 +71,37 @@ class ChatServer:
             self._read_new_member_msg(sock, msg)
 
     def _read_text_msg(self, sock: socket.socket, msg: dict):
-        nickname = self._members[sock].nickname
-        self.broadcast(self.pack_text_msg(f"{nickname}: {msg['Text']}"))
+        username = self._members[sock].username
+        self.broadcast(self.pack_text_msg(f"{username}: {msg['Text']}"))
 
     def _read_new_member_msg(self, sock: socket.socket, msg: dict):
-        self._add_member(sock, msg["Nickname"])
+        self._add_member(sock, msg["Username"])
 
-    def _add_member(self, sock: socket.socket, nickname: str):
+    def _add_member(self, sock: socket.socket, username: str):
         for member in self._members.values():
             self.send_msg(sock, self.pack_new_member_msg(member))
 
-        nickname = self._generate_unique_nickname(nickname)
+        username = self._generate_unique_username(username)
         self._members[sock] = Member(
-            self._next_member_id,
-            nickname,
+            username,
             sock.getpeername(),
         )
-        self._next_member_id += 1
 
+        self.send_msg(sock, self.pack_unique_username(username))
         self.broadcast(
-            self.pack_text_msg(f"{SERVER_NAME}: {nickname} joined the chat")
+            self.pack_text_msg(f"{SERVER_NAME}: {username} joined the chat")
         )
         self.broadcast(self.pack_new_member_msg(self._members[sock]))
-        print(f"{nickname}: {self._members[sock].peername} connected")
+        print(f"{username}: {self._members[sock].peername} connected")
 
-    def _generate_unique_nickname(self, nickname: str) -> str:
-        nicknames = [member.nickname for member in self._members.values()]
-        if nickname in nicknames:
+    def _generate_unique_username(self, username: str) -> str:
+        usernames = [member.username for member in self._members.values()]
+        if username in usernames:
             i = 1
-            while nickname + str(i) in nicknames:
+            while username + str(i) in usernames:
                 i += 1
-            nickname = nickname + str(i)
-        return nickname if nickname != SERVER_NAME else "NOT a " + nickname
+            username = username + str(i)
+        return username if username != SERVER_NAME else "NOT a " + username
 
     def pack_text_msg(self, text: str) -> bytes:
         msg = {
@@ -118,8 +115,7 @@ class ChatServer:
     def pack_new_member_msg(self, member: Member) -> bytes:
         msg = {
             "Type": "new_member",
-            "Id": member.id,
-            "Nickname": member.nickname,
+            "Username": member.username,
         }
         encoded_msg = json.dumps(msg).encode()
         msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
@@ -128,9 +124,18 @@ class ChatServer:
     def pack_left_chat_msg(self, member: Member) -> bytes:
         header = {
             "Type": "left_chat",
-            "Id": member.id,
+            "Username": member.username,
         }
         encoded_msg = json.dumps(header).encode()
+        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
+        return msg_len + encoded_msg
+
+    def pack_unique_username(self, username: str) -> bytes:
+        msg = {
+            "Type": "unique_username",
+            "Username": username,
+        }
+        encoded_msg = json.dumps(msg).encode()
         msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
         return msg_len + encoded_msg
 
@@ -146,14 +151,14 @@ class ChatServer:
 
     def remove(self, sock: socket.socket, send_close: bool = True):
         member = self._members[sock]
-        print(f"{member.nickname}: {member.peername} closed connection")
+        print(f"{member.username}: {member.peername} closed connection")
 
         self._selector.unregister(sock)
         self._members.pop(sock)
         sock.close()
 
         if send_close:
-            text = f"{SERVER_NAME}: {member.nickname} left the chat"
+            text = f"{SERVER_NAME}: {member.username} left the chat"
             self.broadcast(self.pack_text_msg(text))
             self.broadcast(self.pack_left_chat_msg(member))
 

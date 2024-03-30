@@ -13,18 +13,18 @@ class LoginScreen(Screen):
             self.info = Static("", id="connecting-error")
             self.ip = Input(id="ip")
             self.port = Input(id="port")
-            self.nickname = Input(id="nickname")
+            self.username = Input(id="username")
             self.button = Button("Connect", id="connect")
             yield self.info
             yield self.ip
             yield self.port
-            yield self.nickname
+            yield self.username
             yield self.button
 
     def on_mount(self) -> None:
         self.ip.border_title = "IP"
         self.port.border_title = "PORT"
-        self.nickname.border_title = "Nickname"
+        self.username.border_title = "Username"
 
     def on_button_pressed(self) -> None:
         try:
@@ -44,7 +44,7 @@ class LoginScreen(Screen):
 
     def connect_to_server(self):
         self.app.client = Client(
-            self.ip.value, int(self.port.value), self.nickname.value
+            self.ip.value, int(self.port.value), self.username.value
         )
         self.app.client.connect()
         self.app.set_interval(0.1, callback=self.app.process_messages)

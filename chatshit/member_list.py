@@ -13,16 +13,18 @@ class MemberList(ListView):
     ]
 
     def add_member(self, msg: dict):
-        self.append(ListItem(Label(msg["Nickname"]), id=f"_{str(msg['Id'])}"))
+        self.append(
+            ListItem(Label(msg["Username"]), id=f"_{str(msg['Username'])}")
+        )
 
     def remove_member(self, msg: dict):
-        self.remove_children(f"#_{str(msg['Id'])}")
+        self.remove_children(f"#_{str(msg['Username'])}")
 
     def on_key(self, event: events.Key):
         main_screen = self.app.get_screen("main_screen")
         if event.key == "enter":
             val = main_screen.input.value
-            nickname = str(self.highlighted_child.children[0].renderable)
-            main_screen.input.value = f"{val}@{nickname}"
+            username = str(self.highlighted_child.children[0].renderable)
+            main_screen.input.value = f"{val}@{username}"
             main_screen.input.focus()
             event.stop()

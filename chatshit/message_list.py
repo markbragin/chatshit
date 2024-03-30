@@ -15,7 +15,7 @@ class MessageList(ListView):
     def add_message(self, msg: str):
         bottom = self.max_scroll_y == int(self.scroll_y)
 
-        tag = f"@{self.app.client.nickname}"
+        tag = f"@{self.app.client.username}"
         if tag in msg.split():
             msg = self._highlight_tag(msg, tag)
 
