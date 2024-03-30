@@ -1,8 +1,7 @@
 $background-color: black
-$accent-color: white
+$accent-color: #FFAAFF
 $default-color: white
 $default-border: round
-$tagged-color: lightcoral
 
 LoginScreen {
     background: $background-color;
@@ -91,13 +90,5 @@ MainScreen {
 
     #message-input:focus {
         border: $default-border $accent-color;
-    }
-
-    .tagged {
-        color: $tagged-color
-    }
-
-    ListItem.--highlight .tagged {
-        color: $background-color
     }
 }

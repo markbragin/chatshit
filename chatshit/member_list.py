@@ -1,5 +1,6 @@
 from textual.binding import Binding, BindingType
 from textual.widgets import ListView, ListItem, Label
+from textual import events
 
 
 class MemberList(ListView):
@@ -22,3 +23,13 @@ class MemberList(ListView):
 
     def remove_member(self, msg: dict):
         self.remove_children(f"#_{str(msg['Id'])}")
+
+    def on_key(self, event: events.Key):
+        main_screen = self.app.get_screen("main_screen")
+        if event.key == "enter":
+            val = main_screen.input.value
+            nickname = str(self.highlighted_child.children[0].renderable)
+            main_screen.input.value = f"{val}@{nickname}"
+            main_screen.input.focus()
+            event.stop()
+

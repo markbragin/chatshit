@@ -10,15 +10,18 @@ class MessageList(ListView):
         Binding("[", "scroll_home", "Scroll home", show=False),
         Binding("]", "scroll_end", "Scroll end", show=False),
     ]
+    hl_color = 'light_coral'
 
     def add_message(self, msg: str):
         bottom = self.max_scroll_y == int(self.scroll_y)
-        label_classes = "message-label"
-        if f"@{self.app.client.nickname}" in msg:  # type: ignore
-            label_classes += " tagged"
+
+        tag = f"@{self.app.client.nickname}"
+        if tag in msg.split():
+            msg = self._highlight_tag(msg, tag)
+
         self.append(
             ListItem(
-                Label(msg, classes=label_classes),
+                Label(f"{msg}", classes="message-label"),
                 classes="message-item",
             )
         )
@@ -27,3 +30,13 @@ class MessageList(ListView):
                 self.scroll_end(animate=False)
             except:
                 pass
+
+    def _highlight_tag(self, msg: str, tag: str) -> str:
+        pos = msg.find(tag)
+        return (
+            msg[:pos]
+            + f"[{self.hl_color}]"
+            + msg[pos : pos + len(tag)]
+            + f"[/{self.hl_color}]"
+            + msg[pos + len(tag) :]
+        )
