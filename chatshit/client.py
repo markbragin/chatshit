@@ -14,6 +14,10 @@ class Client:
         self._nickname = nickname
         self.message_queue = Queue()
 
+    @property
+    def nickname(self) -> str:
+        return self._nickname
+
     def connect(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 

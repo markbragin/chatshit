@@ -13,9 +13,13 @@ class MessageList(ListView):
 
     def add_message(self, msg: str):
         bottom = self.max_scroll_y == int(self.scroll_y)
+        label_classes = "message-label"
+        if f"@{self.app.client.nickname}" in msg:  # type: ignore
+            label_classes += " tagged"
         self.append(
             ListItem(
-                Label(msg, classes="message-label"), classes="message-item"
+                Label(msg, classes=label_classes),
+                classes="message-item",
             )
         )
         if bottom:
