@@ -12,6 +12,7 @@ textual = "^0.54.0"
 
 [tool.poetry.group.dev.dependencies]
 textual-dev = "^1.2.1"
+loguru = "^0.7.2"
 
 [build-system]
 requires = ["poetry-core"]
