@@ -11,9 +11,15 @@ class MessageList(ListView):
         Binding("]", "scroll_end", "Scroll end", show=False),
     ]
 
-
     def add_message(self, msg: str):
-        self.append(ListItem(Label(msg, classes="message-label"),
-                             classes="message-item"))
-
-
+        bottom = self.max_scroll_y == int(self.scroll_y)
+        self.append(
+            ListItem(
+                Label(msg, classes="message-label"), classes="message-item"
+            )
+        )
+        if bottom:
+            try:
+                self.scroll_end(animate=False)
+            except:
+                pass

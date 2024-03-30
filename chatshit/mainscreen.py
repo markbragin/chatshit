@@ -27,6 +27,5 @@ class MainScreen(Screen):
         if text:
             self.app.client.send_msg(self.app.client.pack_text_msg(text))
             self.input.clear()
-            if self.message_list.allow_vertical_scroll:
-                self.message_list.scroll_end()
+            self.message_list.scroll_end()
 

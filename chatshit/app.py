@@ -1,5 +1,3 @@
-from threading import Thread
-
 from textual.app import App
 
 from .loginscreen import LoginScreen
@@ -13,7 +11,7 @@ class ChatRoom(App):
 
     SCREENS = {
         "login_screen": LoginScreen(),
-        "main_screen": MainScreen()
+        "main_screen": MainScreen(),
     }
 
     client: Client
@@ -23,15 +21,15 @@ class ChatRoom(App):
         self.push_screen("login_screen")
 
     def process_messages(self):
-        screen = self.get_screen("main_screen")
+        screen: MainScreen = self.get_screen("main_screen")  # type: ignore
         while not self.client.message_queue.empty():
             msg = self.client.message_queue.get()
             if msg["Type"] == "text":
-                screen.message_list.add_message(msg["Text"]) #type: ignore
+                screen.message_list.add_message(msg["Text"])
             elif msg["Type"] == "new_member":
-                screen.member_list.add_member(msg) #type: ignore
+                screen.member_list.add_member(msg)
             elif msg["Type"] == "left_chat":
-                screen.member_list.remove_member(msg) #type: ignore
+                screen.member_list.remove_member(msg)
 
 
 if __name__ == "__main__":
