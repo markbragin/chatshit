@@ -3,8 +3,8 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Input
 
-from .message_list import MessageList
-from .member_list import MemberList
+from chatshit.message_list import MessageList
+from chatshit.member_list import MemberList
 
 
 class MainScreen(Screen):

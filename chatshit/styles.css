@@ -1,102 +1,94 @@
+$background-color: black
+$accent-color: lightgreen
+$default-color: white
+$default-border: round
+
 LoginScreen {
-    background: black;
+    background: $background-color;
     align: center middle;
-}
 
-LoginScreen Container {
-    align: center middle;
-    background: black;
-    border: round white;
-    max-width: 40;
-    max-height: 16;
-}
+    #input-form {
+        align: center middle;
+        background: $background-color;
+        border: $default-border $default-color;
+        max-width: 40;
+        max-height: 16;
+    }
 
-LoginScreen #connecting-error {
-    align: center middle;
-    background: black;
-    padding: 0 0 1 2;
-}
+    #connecting-error {
+        align: center middle;
+        background: $background-color;
+        padding: 0 0 1 2;
+    }
 
-LoginScreen Input {
-    background: black;
-    border: round white;
-}
+    Input {
+        background: $background-color;
+        border: $default-border $default-color;
+    }
 
-LoginScreen Input:focus {
-    background: black;
-    border: round green;
-}
+    Input:focus {
+        background: $background-color;
+        border: $default-border $accent-color;
+    }
 
-LoginScreen Button {
-    background: black;
-    border: round white;
-    color: white;
-    opacity: 80%;
-    margin: 0 10;
-    width: 100%;
-}
+    Button {
+        background: $background-color;
+        border: $default-border $default-color;
+        color: $default-color;
+        opacity: 80%;
+        margin: 0 10;
+        width: 100%;
+    }
 
-LoginScreen Button:focus {
-    border: round green;
-    color: green;
-    text-style: bold;
-    text-opacity: 100%;
+    Button:focus {
+        border: $accent-color;
+        color: $accent-color;
+        text-style: bold;
+        text-opacity: 100%;
+    }
 }
 
 MainScreen {
-    background: black;
-    border: round white;
+    background: $background-color;
+    border: $default-border $default-color;
 
-    #member-list {
-        background: black;
+    ListView {
+        background: $background-color;
         padding: 0 1 0 1;
         scrollbar-size: 0 1;
-        scrollbar-background: black;
-        scrollbar-color: grey;
-        border: round white;
+        scrollbar-background: $background-color;
+        scrollbar-color: $default-color;
+        border: $default-border $default-color;
+    }
+
+    ListItem {
+        background: $background-color;
+    }
+
+    ListView:focus {
+        border: $default-border $accent-color 
+    }
+
+    ListView:focus ListItem.--highlight {
+        background: $accent-color;
+    }
+
+    #member-list {
         width: 1fr;
         min-width: 20;
     }
-
-    /* .member-item { */
-    /*     background: #000000; */
-    /*     /1* border: round white; *1/ */
-    /* } */
-
-    /* .member-label { */
-    /*     width: 100%; */
-    /* } */
 
     #vertical-layout {
         width: 5fr;
     }
 
-    #message-list {
-        background: black;
-        border: round white;
-        padding: 0 1 0 1;
-        scrollbar-size: 0 1;
-        scrollbar-background: black;
-        scrollbar-color: grey;
-        width: 100%;
-    }
-
-    /* .message-item { */
-    /*     background: #000000; */
-    /* } */
-
-    /* .message-label { */
-    /*     width: 100%; */
-    /* } */
-
     #message-input {
-        background: black;
-        border: round white;
-    }
-
-    #message-input {
+        border: $default-border $default-color;
         height: 3;
         width: 100%;
     }
 
+    #message-input:focus {
+        border: $default-border $accent-color;
+    }
 }

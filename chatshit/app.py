@@ -1,8 +1,8 @@
 from textual.app import App
 
-from .loginscreen import LoginScreen
-from .mainscreen import MainScreen
-from .client import Client
+from chatshit.loginscreen import LoginScreen
+from chatshit.mainscreen import MainScreen
+from chatshit.client import Client
 
 
 class ChatRoom(App):

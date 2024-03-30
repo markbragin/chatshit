@@ -10,10 +10,12 @@ import time
 MSG_SIZE = 4096
 SERVER_NAME = "[SERVER]"
 
+
 @dataclass
 class Member:
     id: int
     nickname: str
+    peername: None
 
 
 class ChatServer:
@@ -82,14 +84,18 @@ class ChatServer:
             self.send_msg(sock, self.pack_new_member_msg(member))
 
         nickname = self._generate_unique_nickname(nickname)
-        self._members[sock] = Member(self._next_member_id, nickname)
+        self._members[sock] = Member(
+            self._next_member_id,
+            nickname,
+            sock.getpeername(),
+        )
         self._next_member_id += 1
 
         self.broadcast(
             self.pack_text_msg(f"{SERVER_NAME}: {nickname} joined the chat")
         )
         self.broadcast(self.pack_new_member_msg(self._members[sock]))
-        print(f"{nickname}: {sock.getpeername()} connected")
+        print(f"{nickname}: {self._members[sock].peername} connected")
 
     def _generate_unique_nickname(self, nickname: str) -> str:
         nicknames = [member.nickname for member in self._members.values()]
@@ -140,7 +146,7 @@ class ChatServer:
 
     def remove(self, sock: socket.socket, send_close: bool = True):
         member = self._members[sock]
-        print(f"{member.nickname}: {sock.getpeername()} closed connection")
+        print(f"{member.nickname}: {member.peername} closed connection")
 
         self._selector.unregister(sock)
         self._members.pop(sock)
