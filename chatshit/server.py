@@ -52,9 +52,11 @@ class ChatServer:
 
     def _handle_new_message(self, sock: socket.socket):
         try:
-            raw_len = sock.recv(4)
-            header_len = socket.ntohl(int.from_bytes(raw_len))
-            header = json.loads(sock.recv(header_len))
+            msg_len = socket.ntohl(int.from_bytes(sock.recv(4)))
+            if msg_len == 0:
+                self.remove(sock)
+                return
+            msg = json.loads(sock.recv(msg_len))
         except json.decoder.JSONDecodeError:
             print("Json corrupted")
             self.remove(sock)
@@ -63,25 +65,17 @@ class ChatServer:
             self.remove(sock)
             return
 
-        if header["Type"] == "text":
-            self._read_text_msg(sock, header["Length"])
-        elif header["Type"] == "new_member":
-            self._read_new_member_msg(sock, header["Length"])
+        if msg["Type"] == "text":
+            self._read_text_msg(sock, msg)
+        elif msg["Type"] == "new_member":
+            self._read_new_member_msg(sock, msg)
 
-    def _read_text_msg(self, sock: socket.socket, length: int):
-        text = sock.recv(length).decode()
-        if not text:
-            self.remove(sock)
-        else:
-            nickname = self._members[sock].nickname
-            self.broadcast(self.pack_text_msg(f"{nickname}: {text}"))
+    def _read_text_msg(self, sock: socket.socket, msg: dict):
+        nickname = self._members[sock].nickname
+        self.broadcast(self.pack_text_msg(f"{nickname}: {msg['Text']}"))
 
-    def _read_new_member_msg(self, sock: socket.socket, length: int):
-        nickname = sock.recv(length).decode().strip()
-        if not nickname:
-            self.remove(sock)
-        else:
-            self._add_member(sock, nickname)
+    def _read_new_member_msg(self, sock: socket.socket, msg: dict):
+        self._add_member(sock, msg["Nickname"])
 
     def _add_member(self, sock: socket.socket, nickname: str):
         nickname = self._generate_unique_nickname(nickname)
@@ -91,7 +85,7 @@ class ChatServer:
         self.broadcast(
             self.pack_text_msg(f"{SERVER_NAME}: {nickname} joined the chat")
         )
-        self.broadcast(self.pack_new_member_msg(nickname))
+        self.broadcast(self.pack_new_member_msg(self._members[sock]))
         print(f"{nickname}: {sock.getpeername()} connected")
 
     def _generate_unique_nickname(self, nickname: str) -> str:
@@ -104,37 +98,32 @@ class ChatServer:
         return nickname if nickname != SERVER_NAME else "NOT a " + nickname
 
     def pack_text_msg(self, text: str) -> bytes:
-        encoded_text = text.encode()
-        text_len = len(encoded_text)
-        header = {
+        msg = {
             "Type": "text",
-            "Length": text_len,
+            "Text": text,
         }
-        encoded_header = json.dumps(header).encode()
-        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
-        return header_len + encoded_header + encoded_text
+        encoded_msg = json.dumps(msg).encode()
+        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
+        return msg_len + encoded_msg
 
-    def pack_new_member_msg(self, nickname: str) -> bytes:
-        encoded_text = nickname.encode()
-        text_len = len(encoded_text)
-        header = {
+    def pack_new_member_msg(self, member: Member) -> bytes:
+        msg = {
             "Type": "new_member",
-            "Length": text_len,
+            "Id": member.id,
+            "Nickname": member.nickname,
         }
-        encoded_header = json.dumps(header).encode()
-        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
-        return header_len + encoded_header + encoded_text
+        encoded_msg = json.dumps(msg).encode()
+        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
+        return msg_len + encoded_msg
 
-    def pack_left_chat_msg(self, nickname: str) -> bytes:
-        encoded_text = nickname.encode()
-        text_len = len(encoded_text)
+    def pack_left_chat_msg(self, member: Member) -> bytes:
         header = {
             "Type": "left_chat",
-            "Length": text_len,
+            "Id": member.id,
         }
-        encoded_header = json.dumps(header).encode()
-        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
-        return header_len + encoded_header + encoded_text
+        encoded_msg = json.dumps(header).encode()
+        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
+        return msg_len + encoded_msg
 
     def broadcast(self, msg: bytes):
         for sock in self._members:
@@ -147,20 +136,17 @@ class ChatServer:
             self.remove(sock)
 
     def remove(self, sock: socket.socket, send_close: bool = True):
-        try:
-            nickname = self._members[sock].nickname
-            print(f"{nickname}: {sock.getpeername()} closed connection")
+        member = self._members[sock]
+        print(f"{member.nickname}: {sock.getpeername()} closed connection")
 
-            self._selector.unregister(sock)
-            self._members.pop(sock)
-            sock.close()
+        self._selector.unregister(sock)
+        self._members.pop(sock)
+        sock.close()
 
-            if send_close:
-                text = f"{SERVER_NAME}: {nickname} left the chat"
-                self.broadcast(self.pack_text_msg(text))
-                self.broadcast(self.pack_left_chat_msg(nickname))
-        except (KeyError, ValueError):
-            print("Error while removing")
+        if send_close:
+            text = f"{SERVER_NAME}: {member.nickname} left the chat"
+            self.broadcast(self.pack_text_msg(text))
+            self.broadcast(self.pack_left_chat_msg(member))
 
     def run_server(self):
         self._serversock.listen()

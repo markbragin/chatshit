@@ -32,25 +32,23 @@ class Client:
 
     def _process_msg(self) -> None:
         while True:
-            raw_len = self._sock.recv(4)
-            header_len = socket.ntohl(int.from_bytes(raw_len))
-            header = json.loads(self._sock.recv(header_len).decode())
-            if header["Type"] == "text":
-                self._read_text_msg(header["Length"])
-            elif header["Type"] == "new_member":
-                self._read_new_member_msg(header["Length"])
-            elif header["Type"] == "left_chat":
-                self._read_left_chat_msg(header["Length"])
+            msg_len = socket.ntohl(int.from_bytes(self._sock.recv(4)))
+            msg = json.loads(self._sock.recv(msg_len).decode())
+            if msg["Type"] == "text":
+                self._read_text_msg(msg)
+            elif msg["Type"] == "new_member":
+                self._read_new_member_msg(msg)
+            elif msg["Type"] == "left_chat":
+                self._read_left_chat_msg(msg)
 
-    def _read_text_msg(self, length: int) -> None:
-        text = self._sock.recv(length).decode()
-        self.text_message_queue.put(text)
+    def _read_text_msg(self, msg: dict) -> None:
+        self.text_message_queue.put(msg["Text"])
 
-    def _read_new_member_msg(self, length: int):
-        nickname = self._sock.recv(length).decode().strip()
+    def _read_new_member_msg(self, msg: dict):
+        pass
 
-    def _read_left_chat_msg(self, length: int):
-        nickname = self._sock.recv(length).decode().strip()
+    def _read_left_chat_msg(self, msg: dict):
+        pass
 
     def send_msg(self, msg: bytes):
         try:
@@ -59,26 +57,22 @@ class Client:
             self.close()
 
     def pack_text_msg(self, text: str) -> bytes:
-        encoded_text = text.encode()
-        text_len = len(encoded_text)
-        header = {
+        msg = {
             "Type": "text",
-            "Length": text_len,
+            "Text": text,
         }
-        encoded_header = json.dumps(header).encode()
-        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
-        return header_len + encoded_header + encoded_text
+        encoded_msg = json.dumps(msg).encode()
+        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
+        return msg_len + encoded_msg
 
     def pack_new_member_msg(self, nickname: str) -> bytes:
-        encoded_text = nickname.encode()
-        text_len = len(encoded_text)
-        header = {
+        msg = {
             "Type": "new_member",
-            "Length": text_len,
+            "Nickname": nickname,
         }
-        encoded_header = json.dumps(header).encode()
-        header_len = socket.htonl(len(encoded_header)).to_bytes(4)
-        return header_len + encoded_header + encoded_text
+        encoded_msg = json.dumps(msg).encode()
+        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
+        return msg_len + encoded_msg
 
     def __enter__(self):
         return self
