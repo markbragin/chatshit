@@ -13,9 +13,11 @@ class MemberList(ListView):
     ]
 
     def add_member(self, msg: dict):
-        self.append(
-            ListItem(Label(msg["Username"]), id=f"_{str(msg['Username'])}")
-        )
+        if msg["Username"] == self.app.client.username:
+            label = Label(msg["Username"] + " (you)")
+        else:
+            label = Label(msg["Username"])
+        self.append(ListItem(label, id=f"_{str(msg['Username'])}"))
 
     def remove_member(self, msg: dict):
         self.remove_children(f"#_{str(msg['Username'])}")

@@ -82,19 +82,17 @@ class ChatServer:
         self._add_member(sock, msg["Username"])
 
     def _read_delete_message_msg(self, msg: dict):
-        self.broadcast(self.pack_delete_message(msg['Id']))
+        self.broadcast(self.pack_delete_message(msg["Id"]))
 
     def _add_member(self, sock: socket.socket, username: str):
+        username = self._generate_unique_username(username)
+        self.send_msg(sock, self.pack_unique_username(username))
+
         for member in self._members.values():
             self.send_msg(sock, self.pack_new_member_msg(member))
 
-        username = self._generate_unique_username(username)
-        self._members[sock] = Member(
-            username,
-            sock.getpeername(),
-        )
+        self._members[sock] = Member(username, sock.getpeername())
 
-        self.send_msg(sock, self.pack_unique_username(username))
         self.broadcast(
             self.pack_text_msg(f"{SERVER_NAME}: {username} joined the chat")
         )
