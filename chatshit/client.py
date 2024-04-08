@@ -1,7 +1,8 @@
-import json
 import socket
 from threading import Thread
 from queue import Queue
+
+import chatshit.proto as proto
 
 
 class Client:
@@ -19,7 +20,7 @@ class Client:
         self._sock.connect((self._host, self._port))
         self._sock.settimeout(timeout)
 
-        self.send_msg(self.pack_new_member_msg(self.username))
+        self.send_msg(proto.pack_join_chat_msg(self.username))
         self._start_reading()
 
     def _start_reading(self):
@@ -29,42 +30,19 @@ class Client:
 
     def _process_msg(self) -> None:
         while True:
-            msg_len = socket.ntohl(int.from_bytes(self._sock.recv(4)))
-            msg = json.loads(self._sock.recv(msg_len).decode())
-            self.message_queue.put(msg)
+            try:
+                msg_len = socket.ntohl(int.from_bytes(self._sock.recv(4)))
+                data = self._sock.recv(msg_len)
+                msg = proto.decode_msg(data)
+                self.message_queue.put(msg)
+            except:
+                self.close()
 
     def send_msg(self, msg: bytes):
         try:
             self._sock.sendall(msg)
         except BrokenPipeError:
             self.close()
-
-    def pack_text_msg(self, text: str) -> bytes:
-        msg = {
-            "Type": "text",
-            "Text": text,
-        }
-        encoded_msg = json.dumps(msg).encode()
-        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
-        return msg_len + encoded_msg
-
-    def pack_new_member_msg(self, username: str) -> bytes:
-        msg = {
-            "Type": "new_member",
-            "Username": username,
-        }
-        encoded_msg = json.dumps(msg).encode()
-        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
-        return msg_len + encoded_msg
-
-    def pack_delete_message(self, msg_id: int) -> bytes:
-        msg = {
-            "Type": "delete_message",
-            "Id": msg_id,
-        }
-        encoded_msg = json.dumps(msg).encode()
-        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
-        return msg_len + encoded_msg
 
     def __enter__(self):
         return self

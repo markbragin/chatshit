@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-import json
 import socket
 import selectors
 import time
+
+import chatshit.proto as proto
 
 
 SERVER_NAME = "[SERVER]"
@@ -39,55 +40,74 @@ class ChatServer:
 
     def _get_new_connection(self, sock: socket.socket):
         sock, _ = sock.accept()
-        self._selector.register(
-            sock, selectors.EVENT_READ, self._handle_new_message
-        )
+        self._selector.register(sock, selectors.EVENT_READ, self._login)
+
+    def _login(self, sock: socket.socket):
+        msg_len = self._read_msg_len(sock)
+        if msg_len == 0:
+            self._close_sock(sock)
+            return
+
+        data = sock.recv(msg_len)
+        try:
+            msg = proto.decode_msg(data)
+            if msg["Type"] == "join_chat":
+                self._add_member(sock, msg["Username"])
+                self._selector.modify(
+                    sock,
+                    selectors.EVENT_READ,
+                    self._handle_new_message,
+                )
+            else:
+                self._close_sock(sock)
+        except (proto.WrongFormat, OSError) as e:
+            print(e)
+            self._close_sock(sock)
+
+    def _read_msg_len(self, sock: socket.socket) -> int:
+        try:
+            return socket.ntohl(int.from_bytes(sock.recv(4)))
+        except ConnectionResetError:
+            return 0
 
     def _handle_new_message(self, sock: socket.socket):
-        try:
-            msg_len = socket.ntohl(int.from_bytes(sock.recv(4)))
-            if msg_len == 0:
-                self.remove(sock)
-                return
-            msg = json.loads(sock.recv(msg_len))
-        except json.decoder.JSONDecodeError:
-            print("Json corrupted")
-            self.remove(sock)
+        msg_len = self._read_msg_len(sock)
+        if msg_len == 0:
+            self._remove(sock)
             return
-        except ConnectionResetError:
-            self.remove(sock)
+
+        data = sock.recv(msg_len)
+        try:
+            msg = proto.decode_msg(data)
+        except proto.WrongFormat as e:
+            print(e)
             return
 
         if msg["Type"] == "text":
-            self._read_text_msg(sock, msg)
-        elif msg["Type"] == "new_member":
-            self._read_new_member_msg(sock, msg)
+            username = self._members[sock].username
+            text = f"{username}: {msg['Text']}"
+            self._broadcast_text(text)
+        elif msg["Type"] == "join_chat":
+            self._add_member(sock, msg["Username"])
         elif msg["Type"] == "delete_message":
-            self._read_delete_message_msg(msg)
+            self._broadcast(proto.pack_delete_message(msg["Id"]))
 
-    def _read_text_msg(self, sock: socket.socket, msg: dict):
-        username = self._members[sock].username
-        self.broadcast(self.pack_text_msg(f"{username}: {msg['Text']}"))
-
-    def _read_new_member_msg(self, sock: socket.socket, msg: dict):
-        self._add_member(sock, msg["Username"])
-
-    def _read_delete_message_msg(self, msg: dict):
-        self.broadcast(self.pack_delete_message(msg["Id"]))
+    def _broadcast_text(self, text: str):
+        to_send = proto.pack_text_msg(text, self._next_message_id)
+        self._next_message_id += 1
+        self._broadcast(to_send)
 
     def _add_member(self, sock: socket.socket, username: str):
         username = self._generate_unique_username(username)
-        self.send_msg(sock, self.pack_unique_username(username))
+        sock.sendall(proto.pack_unique_username(username))
 
         for member in self._members.values():
-            self.send_msg(sock, self.pack_new_member_msg(member))
+            sock.sendall(proto.pack_join_chat_msg(member.username))
 
         self._members[sock] = Member(username, sock.getpeername())
 
-        self.broadcast(
-            self.pack_text_msg(f"{SERVER_NAME}: {username} joined the chat")
-        )
-        self.broadcast(self.pack_new_member_msg(self._members[sock]))
+        self._broadcast_text(f"{SERVER_NAME}: {username} joined the chat")
+        self._broadcast(proto.pack_join_chat_msg(self._members[sock].username))
         print(f"{username}: {self._members[sock].peername} connected")
 
     def _generate_unique_username(self, username: str) -> str:
@@ -99,75 +119,38 @@ class ChatServer:
             username = f"{username}({str(i)})"
         return username if username != SERVER_NAME else "NOT a " + username
 
-    def pack_text_msg(self, text: str) -> bytes:
-        msg = {
-            "Type": "text",
-            "Id": self._next_message_id,
-            "Text": text,
-        }
-        self._next_message_id += 1
-        encoded_msg = json.dumps(msg).encode()
-        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
-        return msg_len + encoded_msg
+    def _broadcast(self, msg: bytes):
+        for sock in self._members.copy():
+            try:
+                sock.sendall(msg)
+            except:
+                self._remove(sock)
 
-    def pack_new_member_msg(self, member: Member) -> bytes:
-        msg = {
-            "Type": "new_member",
-            "Username": member.username,
-        }
-        encoded_msg = json.dumps(msg).encode()
-        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
-        return msg_len + encoded_msg
+    def _close_sock(self, sock: socket.socket):
+        username = "Somebody"
+        peername = "??"
+        if sock in self._members:
+            username = self._members[sock].username
+            peername = self._members[sock].peername
+        else:
+            try:
+                peername = sock.getpeername()
+            except:
+                pass
 
-    def pack_left_chat_msg(self, member: Member) -> bytes:
-        header = {
-            "Type": "left_chat",
-            "Username": member.username,
-        }
-        encoded_msg = json.dumps(header).encode()
-        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
-        return msg_len + encoded_msg
-
-    def pack_unique_username(self, username: str) -> bytes:
-        msg = {
-            "Type": "unique_username",
-            "Username": username,
-        }
-        encoded_msg = json.dumps(msg).encode()
-        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
-        return msg_len + encoded_msg
-
-    def pack_delete_message(self, msg_id: int) -> bytes:
-        msg = {
-            "Type": "delete_message",
-            "Id": msg_id,
-        }
-        encoded_msg = json.dumps(msg).encode()
-        msg_len = socket.htonl(len(encoded_msg)).to_bytes(4)
-        return msg_len + encoded_msg
-
-    def broadcast(self, msg: bytes):
-        for sock in self._members:
-            self.send_msg(sock, msg)
-
-    def send_msg(self, sock: socket.socket, msg: bytes):
-        try:
-            sock.sendall(msg)
-        except:
-            self.remove(sock)
-
-    def remove(self, sock: socket.socket, send_close: bool = True):
-        member = self._members[sock]
-        print(f"{member.username}: {member.peername} closed connection")
-
+        print(f"{username} {peername} closed connection")
         self._selector.unregister(sock)
-        self._members.pop(sock)
         sock.close()
+
+    def _remove(self, sock: socket.socket, send_close: bool = True):
+        self._close_sock(sock)
+        member = self._members[sock]
+        self._members.pop(sock)
 
         if send_close:
             text = f"{SERVER_NAME}: {member.username} left the chat"
-            self.broadcast(self.pack_text_msg(text))
-            self.broadcast(self.pack_left_chat_msg(member))
+            self._broadcast_text(text)
+            self._broadcast(proto.pack_left_chat_msg(member.username))
 
     def run_server(self):
         self._serversock.listen()
@@ -179,10 +162,10 @@ class ChatServer:
                 callback(key.fileobj)
 
     def shutdown(self):
-        self.broadcast(self.pack_text_msg(f"{SERVER_NAME}: shutdown"))
+        self._broadcast_text(f"{SERVER_NAME}: shutdown")
         time.sleep(1)
         for sock in self._members:
-            self.remove(sock, send_close=False)
+            self._close_sock(sock)
         self._serversock.close()
 
 

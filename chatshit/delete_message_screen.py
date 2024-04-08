@@ -4,6 +4,8 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label
 from textual import events
 
+import chatshit.proto as proto
+
 
 class DeleteMessageScreen(ModalScreen):
     
@@ -37,6 +39,6 @@ class DeleteMessageScreen(ModalScreen):
             message_list.delete_message(self._msg_id)
         elif event.button.id == "button-delete-for-all":
             self.app.client.send_msg(
-                self.app.client.pack_delete_message(self._msg_id)
+                proto.pack_delete_message(self._msg_id)
             )
         self.app.pop_screen()

@@ -1,5 +1,3 @@
-import binascii
-
 from textual.binding import Binding, BindingType
 from textual.widgets import ListView, ListItem, Label
 from textual import events

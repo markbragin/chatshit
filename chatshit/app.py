@@ -26,7 +26,7 @@ class ChatRoom(App):
             msg = self.client.message_queue.get()
             if msg["Type"] == "text":
                 screen.message_list.add_message(msg)
-            elif msg["Type"] == "new_member":
+            elif msg["Type"] == "join_chat":
                 screen.member_list.add_member(msg)
             elif msg["Type"] == "left_chat":
                 screen.member_list.remove_member(msg)

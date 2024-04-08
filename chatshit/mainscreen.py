@@ -5,6 +5,7 @@ from textual.widgets import Input
 
 from chatshit.message_list import MessageList
 from chatshit.member_list import MemberList
+import chatshit.proto as proto
 
 
 class MainScreen(Screen):
@@ -25,7 +26,7 @@ class MainScreen(Screen):
     def on_input_submitted(self, event: events.InputEvent):
         text = self.input.value.strip()
         if text:
-            self.app.client.send_msg(self.app.client.pack_text_msg(text))
+            self.app.client.send_msg(proto.pack_text_msg(text))
             self.input.clear()
             self.message_list.scroll_end()
 
