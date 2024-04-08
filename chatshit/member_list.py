@@ -1,3 +1,5 @@
+import binascii
+
 from textual.binding import Binding, BindingType
 from textual.widgets import ListView, ListItem, Label
 from textual import events
@@ -17,7 +19,9 @@ class MemberList(ListView):
             label = Label(msg["Username"] + " (you)")
         else:
             label = Label(msg["Username"])
-        self.append(ListItem(label, id=f"_{str(msg['Username'])}"))
+
+        uid = msg["Username"].encode().hex()
+        self.append(ListItem(label, id=f"_{uid}"))
 
     def remove_member(self, msg: dict):
         self.remove_children(f"#_{str(msg['Username'])}")
@@ -26,7 +30,7 @@ class MemberList(ListView):
         main_screen = self.app.get_screen("main_screen")
         if event.key == "enter":
             val = main_screen.input.value
-            username = str(self.highlighted_child.children[0].renderable)
+            username = bytes.fromhex(self.highlighted_child.id[1:]).decode()
             main_screen.input.value = f"{val}@{username}"
             main_screen.input.focus()
             event.stop()
