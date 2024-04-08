@@ -4,10 +4,7 @@ import socket
 import selectors
 import time
 
-# from threading import Thread
 
-
-MSG_SIZE = 4096
 SERVER_NAME = "[SERVER]"
 
 
@@ -28,7 +25,6 @@ class ChatServer:
             self._serversock,
             selectors.EVENT_READ,
             self._get_new_connection,
-            # self._listen_to_new_connections,
         )
 
         self._next_message_id = 1
@@ -40,11 +36,6 @@ class ChatServer:
 
     def __exit__(self):
         self._serversock.close()
-
-    # def _listen_to_new_connections(self, sock: socket.socket):
-    #     conn_t = Thread(target=self._get_new_connection, args=(sock,))
-    #     conn_t.daemon = True
-    #     conn_t.start()
 
     def _get_new_connection(self, sock: socket.socket):
         sock, _ = sock.accept()
@@ -105,7 +96,7 @@ class ChatServer:
             i = 1
             while username + str(i) in usernames:
                 i += 1
-            username = username + str(i)
+            username = f"{username}({str(i)})"
         return username if username != SERVER_NAME else "NOT a " + username
 
     def pack_text_msg(self, text: str) -> bytes:

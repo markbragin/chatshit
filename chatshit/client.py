@@ -4,9 +4,6 @@ from threading import Thread
 from queue import Queue
 
 
-MSG_SIZE = 4096
-
-
 class Client:
     def __init__(self, host: str, port: int, username: str):
         self._host = host
