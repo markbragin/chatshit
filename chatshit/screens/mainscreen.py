@@ -3,9 +3,9 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Input
 
-from chatshit.message_list import MessageList
-from chatshit.member_list import MemberList
-import chatshit.proto as proto
+from chatshit.widgets.message_list import MessageList
+from chatshit.widgets.member_list import MemberList
+import chatshit.network.proto as proto
 
 
 class MainScreen(Screen):

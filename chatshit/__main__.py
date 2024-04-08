@@ -19,7 +19,7 @@ def print_usage():
 
 
 def run_client():
-    from .app import ChatRoom
+    from chatshit.app import ChatRoom
     app = ChatRoom()
     try:
         app.run()
@@ -27,7 +27,7 @@ def run_client():
         app.client.close()
 
 def run_server():
-    from .server import ChatServer
+    from chatshit.network.server import ChatServer
 
     try:
         server = ChatServer(sys.argv[2], int(sys.argv[3]))

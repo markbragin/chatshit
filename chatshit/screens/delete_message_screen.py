@@ -4,7 +4,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label
 from textual import events
 
-import chatshit.proto as proto
+import chatshit.network.proto as proto
 
 
 class DeleteMessageScreen(ModalScreen):

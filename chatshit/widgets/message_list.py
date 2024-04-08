@@ -2,7 +2,7 @@ from textual.binding import Binding, BindingType
 from textual.widgets import ListView, ListItem, Label
 from textual import events
 
-from chatshit.delete_message_screen import DeleteMessageScreen
+from chatshit.screens.delete_message_screen import DeleteMessageScreen
 
 
 class MessageList(ListView):

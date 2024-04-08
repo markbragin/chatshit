@@ -2,7 +2,7 @@ import socket
 from threading import Thread
 from queue import Queue
 
-import chatshit.proto as proto
+import chatshit.network.proto as proto
 
 
 class Client:

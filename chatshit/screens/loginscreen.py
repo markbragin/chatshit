@@ -4,7 +4,7 @@ from textual.containers import Container
 from textual.screen import Screen
 from textual.widgets import Button, Input, Static
 
-from chatshit.client import Client
+from chatshit.network.client import Client
 
 
 class LoginScreen(Screen):

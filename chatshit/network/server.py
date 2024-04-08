@@ -3,7 +3,7 @@ import socket
 import selectors
 import time
 
-import chatshit.proto as proto
+import chatshit.network.proto as proto
 
 
 SERVER_NAME = "[SERVER]"
