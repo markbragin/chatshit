@@ -59,9 +59,9 @@ class ChatRoomScreen(Screen):
             if msg["Type"] == "text":
                 self.message_list.add_message(msg)
             elif msg["Type"] == "join_chat":
-                self.member_list.add_member(msg)
+                self.member_list.add_member(msg["Username"])
             elif msg["Type"] == "left_chat":
-                self.member_list.remove_member(msg)
+                self.member_list.remove_member(msg["Username"])
             elif msg["Type"] == "unique_username":
                 self.client.username = msg["Username"]
             elif msg["Type"] == "delete_message":

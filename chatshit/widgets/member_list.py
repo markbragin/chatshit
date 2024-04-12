@@ -12,22 +12,24 @@ class MemberList(ListView):
         Binding("]", "scroll_end", "Scroll end", show=False),
     ]
 
-    def add_member(self, msg: dict):
-        if msg["Username"] == self.screen.client.username:
-            label = Label(msg["Username"] + " (you)")
+    def add_member(self, username: str):
+        if username == self.screen.client.username:
+            label = Label(username + " (you)")
         else:
-            label = Label(msg["Username"])
+            label = Label(username)
 
-        uid = msg["Username"].encode().hex()
+        uid = username.encode().hex()
         self.append(ListItem(label, id=f"_{uid}"))
 
-    def remove_member(self, msg: dict):
-        self.remove_children(f"#_{str(msg['Username'])}")
+    def remove_member(self, username: str):
+        uid = username.encode().hex()
+        self.remove_children(f"#_{uid}")
 
     def on_key(self, event: events.Key):
         if event.key == "enter":
-            val = self.screen.input.value
-            username = bytes.fromhex(self.highlighted_child.id[1:]).decode()
-            self.screen.input.value = f"{val}@{username}"
-            self.screen.input.focus()
+            val = self.screen.input.value # type: ignore
+            uid = self.highlighted_child.id[1:] # type: ignore
+            username = bytes.fromhex(uid).decode()
+            self.screen.input.value = f"{val}@{username}" # type: ignore
+            self.screen.input.focus() # type: ignore
             event.stop()
