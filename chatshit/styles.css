@@ -49,7 +49,7 @@ LoginScreen {
     }
 }
 
-MainScreen {
+ChatRoomScreen {
     background: $background-color;
     border: $default-border $default-color;
 

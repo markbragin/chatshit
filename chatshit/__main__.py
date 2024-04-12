@@ -19,12 +19,12 @@ def print_usage():
 
 
 def run_client():
-    from chatshit.app import ChatRoom
-    app = ChatRoom()
+    from chatshit.app import ChatApp
+    app = ChatApp()
     try:
         app.run()
     except KeyboardInterrupt:
-        app.client.close()
+        app.close_all_clients()
 
 def run_server():
     from chatshit.network.server import ChatServer

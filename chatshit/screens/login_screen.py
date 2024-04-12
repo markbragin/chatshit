@@ -8,6 +8,7 @@ from chatshit.network.client import Client
 
 
 class LoginScreen(Screen):
+
     def compose(self) -> ComposeResult:
         with Container(id="input-form"):
             self.info = Static("", id="connecting-error")
@@ -28,7 +29,10 @@ class LoginScreen(Screen):
 
     def on_button_pressed(self) -> None:
         try:
-            self.connect_to_server()
+            self._client = Client(
+                self.ip.value, int(self.port.value), self.username.value
+            )
+            self._client.connect()
         except ValueError:
             self.info.update("Port is a number")
         except gaierror:
@@ -40,11 +44,5 @@ class LoginScreen(Screen):
         except TimeoutError:
             self.info.update("Timeout")
         else:
-            self.dismiss()
+            self.dismiss(self._client)
 
-    def connect_to_server(self):
-        self.app.client = Client(
-            self.ip.value, int(self.port.value), self.username.value
-        )
-        self.app.client.connect()
-        self.app.set_interval(0.1, callback=self.app.process_messages)

@@ -1,44 +1,34 @@
 from textual.app import App
 
-from chatshit.screens.loginscreen import LoginScreen
-from chatshit.screens.mainscreen import MainScreen
+from chatshit.screens.chatroom_screen import ChatRoomScreen
 from chatshit.network.client import Client
 
 
-class ChatRoom(App):
+class ChatApp(App):
 
     CSS_PATH = "styles.css"
 
-    SCREENS = {
-        "login_screen": LoginScreen(),
-        "main_screen": MainScreen(),
-    }
-
-    client: Client
+    def __init__(self):
+        super().__init__()
+        self._clients: list[Client] = []
 
     def on_mount(self):
-        self.push_screen("main_screen")
-        self.push_screen("login_screen")
+        self.push_screen(ChatRoomScreen())
 
-    def process_messages(self):
-        screen: MainScreen = self.get_screen("main_screen")  # type: ignore
-        while not self.client.message_queue.empty():
-            msg = self.client.message_queue.get()
-            if msg["Type"] == "text":
-                screen.message_list.add_message(msg)
-            elif msg["Type"] == "join_chat":
-                screen.member_list.add_member(msg)
-            elif msg["Type"] == "left_chat":
-                screen.member_list.remove_member(msg)
-            elif msg["Type"] == "unique_username":
-                self.client.username = msg["Username"]
-            elif msg["Type"] == "delete_message":
-                screen.message_list.delete_message(msg['Id'])
+    def add_client(self, client: Client):
+        self._clients.append(client)
+    
+    def on_chat_room_screen_add_client(self, message: ChatRoomScreen.AddClient):
+        self.add_client(message.client)
+
+    def close_all_clients(self):
+        for client in self._clients:
+            client.close()
 
 
 if __name__ == "__main__":
-    app = ChatRoom()
+    app = ChatApp()
     try:
         app.run()
     except KeyboardInterrupt:
-        app.client.close()
+        app.close_all_clients()

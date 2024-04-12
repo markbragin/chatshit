@@ -13,7 +13,7 @@ class MemberList(ListView):
     ]
 
     def add_member(self, msg: dict):
-        if msg["Username"] == self.app.client.username:
+        if msg["Username"] == self.screen.client.username:
             label = Label(msg["Username"] + " (you)")
         else:
             label = Label(msg["Username"])
@@ -25,10 +25,9 @@ class MemberList(ListView):
         self.remove_children(f"#_{str(msg['Username'])}")
 
     def on_key(self, event: events.Key):
-        main_screen = self.app.get_screen("main_screen")
         if event.key == "enter":
-            val = main_screen.input.value
+            val = self.screen.input.value
             username = bytes.fromhex(self.highlighted_child.id[1:]).decode()
-            main_screen.input.value = f"{val}@{username}"
-            main_screen.input.focus()
+            self.screen.input.value = f"{val}@{username}"
+            self.screen.input.focus()
             event.stop()
