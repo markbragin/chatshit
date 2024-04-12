@@ -27,9 +27,9 @@ class MemberList(ListView):
 
     def on_key(self, event: events.Key):
         if event.key == "enter":
-            val = self.screen.input.value # type: ignore
-            uid = self.highlighted_child.id[1:] # type: ignore
+            val = self.screen.input.value
+            uid = self.highlighted_child.id[1:]
             username = bytes.fromhex(uid).decode()
-            self.screen.input.value = f"{val}@{username}" # type: ignore
-            self.screen.input.focus() # type: ignore
+            self.screen.input.value = f"{val}@{username}"
+            self.screen.input.focus()
             event.stop()
