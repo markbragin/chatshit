@@ -33,6 +33,8 @@ class ChatList(ListView):
 
     def remove_chat(self, chat_id: int):
         self.remove_children(f"#_{chat_id}")
+        self.action_cursor_down()
+        self.action_cursor_up()
 
     def on_key(self, event: events.Key):
         if event.key == "enter":

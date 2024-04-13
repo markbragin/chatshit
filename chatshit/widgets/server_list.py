@@ -32,6 +32,8 @@ class ServerList(ListView):
 
     def remove_server(self, server_id: int):
         self.remove_children(f"#_{server_id}")
+        self.action_cursor_down()
+        self.action_cursor_up()
 
     def on_key(self, event: events.Key):
         if event.key == "enter":
