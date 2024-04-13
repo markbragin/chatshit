@@ -41,7 +41,7 @@ class Client:
     def send_msg(self, msg: bytes):
         try:
             self._sock.sendall(msg)
-        except BrokenPipeError:
+        except (BrokenPipeError, OSError):
             self.close()
 
     def __enter__(self):
