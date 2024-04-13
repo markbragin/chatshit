@@ -7,8 +7,8 @@ import chatshit.network.proto as proto
 
 class Client:
     def __init__(self, host: str, port: int, username: str):
-        self._host = host
-        self._port = port
+        self.host = host
+        self.port = port
         self.username = username
         self.message_queue = Queue()
 
@@ -17,7 +17,7 @@ class Client:
 
         timeout = self._sock.gettimeout()
         self._sock.settimeout(5)
-        self._sock.connect((self._host, self._port))
+        self._sock.connect((self.host, self.port))
         self._sock.settimeout(timeout)
 
         self.send_msg(proto.pack_join_chat_msg(self.username))
