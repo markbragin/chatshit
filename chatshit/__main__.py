@@ -4,7 +4,7 @@ import socket
 
 def main():
     if len(sys.argv) == 1:
-        run_client()
+        run_app()
     elif len(sys.argv) == 4 and sys.argv[1] == '--server':
         run_server()
     else:
@@ -18,19 +18,22 @@ def print_usage():
     print("chatshit --server HOST PORT")
 
 
-def run_client():
+def run_app():
     from chatshit.app import ChatApp
     app = ChatApp()
     try:
         app.run()
+        app.close_all_clients()
+        app.close_all_servers()
     except KeyboardInterrupt:
         app.close_all_clients()
+        app.close_all_servers()
 
 def run_server():
-    from chatshit.network.server import ChatServer
+    from chatshit.network.chatroom_server import ChatRoomServer
 
     try:
-        server = ChatServer(sys.argv[2], int(sys.argv[3]))
+        server = ChatRoomServer(sys.argv[2], int(sys.argv[3]))
     except socket.gaierror:
         print("Wrong host or port")
         exit(1)

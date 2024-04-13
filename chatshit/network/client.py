@@ -28,7 +28,7 @@ class Client:
         recv.daemon = True
         recv.start()
 
-    def _process_msg(self) -> None:
+    def _process_msg(self):
         while True:
             try:
                 msg_len = socket.ntohl(int.from_bytes(self._sock.recv(4)))

@@ -7,14 +7,14 @@ from textual.widgets import Button, Label
 from textual import events
 
 
-
 class DeleteMessageScreen(ModalScreen):
 
-    @dataclass
     class Answer:
-        msg_id: int
-        delete: bool
-        for_all: bool
+        def __init__(self, msg_id: int, delete: bool, for_all: bool):
+            self.msg_id = msg_id
+            self.delete = delete
+            self.for_all = for_all
+
 
     def __init__(self, msg_id: int):
         super().__init__()
@@ -34,7 +34,7 @@ class DeleteMessageScreen(ModalScreen):
             self.dismiss(self.Answer(0, False, False))
             event.stop()
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
+    def on_button_pressed(self, event: Button.Pressed):
         if event.button.id == "button-delete":
             self.dismiss(self.Answer(self._msg_id, True, False))
         elif event.button.id == "button-delete-for-all":

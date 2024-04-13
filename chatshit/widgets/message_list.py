@@ -17,7 +17,7 @@ class MessageList(ListView):
     hl_color = "light_coral"
 
     class Delete(Message):
-        def __init__(self, msg_id: int) -> None:
+        def __init__(self, msg_id: int):
             super().__init__()
             self.msg_id = msg_id
 

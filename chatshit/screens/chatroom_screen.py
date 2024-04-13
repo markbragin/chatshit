@@ -1,6 +1,5 @@
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.screen import Screen
 from textual.widgets import Input
 from textual.message import Message
 
@@ -8,19 +7,15 @@ import chatshit.network.proto as proto
 from chatshit.screens.login_screen import LoginScreen
 from chatshit.widgets.message_list import MessageList
 from chatshit.widgets.member_list import MemberList
-from chatshit.network.client import Client
+from chatshit.screens.client_screen import ClientScreen
 
 
-class ChatRoomScreen(Screen):
+class ChatRoomScreen(ClientScreen):
 
     class AddClient(Message):
-        def __init__(self, client: Client):
+        def __init__(self, screen: ClientScreen):
             super().__init__()
-            self.client = client
-
-    def __init__(self):
-        super().__init__()
-        self._client = None
+            self.screen = screen
 
     def compose(self) -> ComposeResult:
         self.message_list = MessageList(id="message-list")
@@ -35,13 +30,24 @@ class ChatRoomScreen(Screen):
 
     def on_mount(self):
         self.input.focus()
-        if self._client == None:
-            self.app.push_screen(LoginScreen(), self.setup_client)
+        if self.client is None:
+            self.app.push_screen(
+                LoginScreen(
+                    host=self._host,
+                    port=self._port,
+                    classes="input-screen",
+                ),
+                self.setup_client,
+            )
 
-    def setup_client(self, client: Client):
-        self.client = client
-        self.post_message(self.AddClient(client))
-        self.set_interval(0.1, callback=self.process_messages)
+    def setup_client(self, creds: LoginScreen.Result | None):
+        if creds is None:
+            self.dismiss()
+        else:
+            self.client = creds.client
+            self.chat_name = creds.name
+            self.post_message(self.AddClient(self))
+            self.set_interval(0.1, callback=self.process_messages)
 
     def on_input_submitted(self):
         text = self.input.value.strip()
@@ -65,5 +71,4 @@ class ChatRoomScreen(Screen):
             elif msg["Type"] == "unique_username":
                 self.client.username = msg["Username"]
             elif msg["Type"] == "delete_message":
-                self.message_list.delete_message(msg['Id'])
-
+                self.message_list.delete_message(msg["Id"])

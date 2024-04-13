@@ -4,7 +4,64 @@ $accent-color: salmon
 $default-border: round
 $hl-color: salmon
 
-LoginScreen {
+HomeScreen {
+    background: $background-color;
+    border: $default-border $default-color;
+
+    ListView {
+        background: $background-color;
+        padding: 0 1 0 1;
+        scrollbar-size: 0 1;
+        scrollbar-background: $background-color;
+        scrollbar-color: $default-color;
+        border: $default-border $default-color;
+    }
+
+    ListItem {
+        background: $background-color;
+    }
+
+    ListView:focus {
+        border: $default-border $accent-color 
+    }
+
+    ListView:focus ListItem.--highlight {
+        /* background: $accent-color; */
+        color: $hl-color;
+    }
+
+    #chat-list {
+        width: 1fr;
+        min-width: 20;
+    }
+
+    #home-screen-buttons {
+        width: 1fr;
+    }
+    
+    #home-screen-buttons {
+        background: $background-color;
+        align: center middle;
+
+        Button {
+            background: $background-color;
+            border: $default-border $default-color;
+            color: $default-color;
+            opacity: 80%;
+            margin: 0 3;
+            width: 100%;
+        }
+
+        Button:focus {
+            border: $default-border $accent-color;
+            color: $accent-color;
+            text-style: bold;
+            text-opacity: 100%;
+        }
+    }
+}
+
+.input-screen {
     background: $background-color;
     align: center middle;
 
@@ -13,7 +70,7 @@ LoginScreen {
         background: $background-color;
         border: $default-border $default-color;
         max-width: 40;
-        max-height: 16;
+        max-height: 20;
     }
 
     #connecting-error {
@@ -126,4 +183,49 @@ DeleteMessageScreen {
         color: $accent-color;
         text-style: bold;
     }
+}
+
+ConfirmationScreen {
+    align: center middle;
+
+    #dialog {
+        grid-size: 2 2;
+        grid-gutter: 1 1;
+        padding: 0 1;
+        width: 60;
+        height: 8;
+        background: $background;
+        border: $default-border $default-color;
+    }
+
+    #question {
+        column-span: 2;
+        width: 1fr;
+        content-align: center middle;
+    }
+
+    Button {
+        background: $background;
+        border: $default-border $default-color;
+        color: $default-color;
+        width: 100%;
+    }
+
+    Button:focus {
+        border: $default-border $accent-color;
+        color: $accent-color;
+        text-style: bold;
+    }
+}
+
+ScrollableContainer {
+    scrollbar-size: 0 1;
+    scrollbar-background: $background-color;
+    scrollbar-background-active: $background-color;
+    scrollbar-background-hover: $background-color;
+    scrollbar-color: $default-color;
+    scrollbar-color-active: $accent-color;
+    scrollbar-color-hover: $accent-color;
+    scrollbar-corner-color: $default-color;
+
 }
