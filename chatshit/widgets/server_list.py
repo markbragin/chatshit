@@ -3,6 +3,8 @@ from textual.message import Message
 from textual.widgets import ListView, ListItem, Label
 from textual import events
 
+from chatshit.screens.confirmation_screen import ConfirmationScreen
+
 
 class ServerList(ListView):
 
@@ -11,6 +13,10 @@ class ServerList(ListView):
             super().__init__()
             self.server_id = server_id
 
+    class StopServer(Message):
+        def __init__(self, server_id: int):
+            super().__init__()
+            self.server_id = server_id
 
     BINDINGS: list[BindingType] = [
         Binding("j", "cursor_down", "Cursor_down", show=False),
@@ -32,3 +38,14 @@ class ServerList(ListView):
             server_id = int(self.highlighted_child.id[1:])
             self.post_message(self.ConnectTo(server_id))
             event.stop()
+        elif event.key == "d":
+            server_id = int(self.highlighted_child.id[1:])
+            q = "Do you want to stop this server?"
+            self.app.push_screen(
+                ConfirmationScreen(q, server_id), self.stop_server
+            )
+            event.stop()
+
+    def stop_server(self, ans: ConfirmationScreen.Answer):
+        if ans.ans == True:
+            self.post_message(self.StopServer(ans.data))

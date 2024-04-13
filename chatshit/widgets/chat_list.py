@@ -42,7 +42,9 @@ class ChatList(ListView):
         elif event.key == "d":
             chat_id = int(self.highlighted_child.id[1:])
             q = "Do you want to delete this chat?"
-            self.app.push_screen(ConfirmationScreen(q, chat_id), self.leave_chat)
+            self.app.push_screen(
+                ConfirmationScreen(q, chat_id), self.leave_chat
+            )
             event.stop()
 
     def leave_chat(self, ans: ConfirmationScreen.Answer):

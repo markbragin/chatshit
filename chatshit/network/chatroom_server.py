@@ -30,6 +30,7 @@ class ChatRoomServer:
             self._get_new_connection,
         )
 
+        self.on = True
         self._next_message_id = 1
 
         self._members: dict[socket.socket, Member] = {}
@@ -157,11 +158,15 @@ class ChatRoomServer:
     def run_server(self):
         self.serversock.listen()
         print("Waiting for connections...")
-        while True:
+        while True and self.on:
             to_read = self._selector.select()
             for key, _ in to_read:
                 callback = key.data
                 callback(key.fileobj)
+        self.shutdown()
+
+    def stop(self):
+        self.on = False
 
     def shutdown(self):
         self._broadcast_text(f"{SERVER_NAME}: shutdown")
