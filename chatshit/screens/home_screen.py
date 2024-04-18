@@ -38,4 +38,6 @@ class HomeScreen(Screen):
 
     def on_server_list_connect_to(self, message: ServerList.ConnectTo):
         host, port = self.app.get_server_address(message.server_id)
+        if host == "0.0.0.0":
+            host = "127.0.0.1"
         self.app.push_screen(ChatRoomScreen(host=host, port=port))

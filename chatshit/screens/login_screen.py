@@ -71,5 +71,7 @@ class LoginScreen(Screen):
             self.info.update("Port must be 0-65535.")
         except TimeoutError:
             self.info.update("Timeout")
+        except OSError as e:
+            self.info.update(e.strerror)
         else:
             self.dismiss(self.Result(self._client, self.name_field.value))
